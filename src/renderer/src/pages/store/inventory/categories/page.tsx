@@ -289,7 +289,7 @@ export default function CategoriesPage() {
                     <FormControl>
                       <SearchableSelect
                         value={field.value || ''}
-                        onChange={field.onChange}
+                        onValueChange={field.onChange}
                         options={[
                           { label: 'None (Main Category)', value: '' },
                           ...categories
@@ -298,7 +298,7 @@ export default function CategoriesPage() {
                         ]}
                         placeholder="Select Parent Category"
                         searchPlaceholder="Search category..."
-                        emptyMessage="No category found."
+                        emptyText="No category found."
                       />
                     </FormControl>
                     <FormMessage />

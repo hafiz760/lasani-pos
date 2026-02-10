@@ -24,6 +24,10 @@ export async function connectToDatabase() {
   }
 
   try {
+    if (!MONGODB_URI) {
+      throw new Error('MONGODB_URI is not set')
+    }
+
     const db = await mongoose.connect(MONGODB_URI)
 
     isConnected = db.connections[0].readyState === 1

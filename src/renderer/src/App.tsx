@@ -31,11 +31,13 @@ import StoreSelectionPage from './pages/auth/StoreSelectionPage'
 import ReportsPage from './pages/store/reports/page'
 import SalesReportsPage from './pages/store/reports/sales/page'
 import SalesReportPage from './pages/store/sales/page'
+import SalesReportPrintPreviewPage from './pages/store/sales/print-preview'
 import SalesDetailPage from './pages/store/reports/sales/detail'
 import AccountingPage from './pages/store/accounting/page'
 import AccountsPage from './pages/store/accounting/accounts/page'
 import ExpensesPage from './pages/store/accounting/expenses/page'
 import TransactionsPage from './pages/store/accounting/transactions/page'
+import TransactionsPrintPreviewPage from './pages/store/accounting/transactions/print-preview'
 import EditSimpleProduct from '@renderer/pages/store/inventory/products/EditSimpleProduct'
 import EditRawMaterialProduct from '@renderer/pages/store/inventory/products/EditRawMaterialProduct'
 import CustomersPage from '@renderer/pages/store/customers/page'
@@ -174,10 +176,15 @@ function App(): React.JSX.Element {
             <Route path="reports/sales" element={<SalesReportsPage />} />
             <Route path="reports/sales/:id" element={<SalesDetailPage />} />
             <Route path="reports/sales-report" element={<SalesReportPage />} />
+            <Route path="reports/sales-report/preview" element={<SalesReportPrintPreviewPage />} />
             <Route path="accounting" element={<AccountingPage />} />
             <Route path="accounting/accounts" element={<AccountsPage />} />
             <Route path="accounting/expenses" element={<ExpensesPage />} />
             <Route path="accounting/transactions" element={<TransactionsPage />} />
+            <Route
+              path="accounting/transactions/preview"
+              element={<TransactionsPrintPreviewPage />}
+            />
           </Route>
 
           <Route

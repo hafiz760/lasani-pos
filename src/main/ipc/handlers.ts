@@ -852,7 +852,6 @@ export function registerIpcHandlers() {
         // ✅ NEW: Supplier field
         supplier,
         // Combo specific
-        isComboSet,
         totalComboMeters,
         canSellSeparate,
         canSellPartialSet,
@@ -992,7 +991,6 @@ export function registerIpcHandlers() {
           await updateInitialStockEntry({
             productId: id,
             storeId,
-            productKind,
             oldQuantity:
               productKind === 'RAW_MATERIAL'
                 ? existingProduct.totalMeters || 0
@@ -1154,7 +1152,6 @@ export function registerIpcHandlers() {
   async function updateInitialStockEntry({
     productId,
     storeId,
-    productKind,
     oldQuantity,
     newQuantity,
     oldBuyingPrice,
@@ -1165,7 +1162,6 @@ export function registerIpcHandlers() {
   }: {
     productId: string
     storeId: string
-    productKind: string
     oldQuantity: number
     newQuantity: number
     oldBuyingPrice: number
@@ -1404,6 +1400,73 @@ export function registerIpcHandlers() {
         .lean()
       if (!supplier) return { success: false, error: 'Supplier not found' }
       return toJSON({ success: true, data: supplier })
+    } catch (error: any) {
+      return { success: false, error: error.message }
+    }
+  })
+
+  ipcMain.handle('suppliers:recordPayment', async (_event, { supplierId, paymentData }) => {
+    try {
+      const { amount, accountId, notes, paymentDate, recordedBy, method } = paymentData || {}
+      const paymentAmount = Number(amount || 0)
+      if (!supplierId || paymentAmount <= 0) {
+        return { success: false, error: 'Invalid supplier payment data' }
+      }
+
+      const supplier = await models.Supplier.findById(supplierId)
+      if (!supplier) {
+        return { success: false, error: 'Supplier not found' }
+      }
+
+      const accounts = await ensureDefaultAccounts(String(supplier.store))
+      const resolvedAccountId = accountId
+        ? String(accountId)
+        : String(accounts.cash?._id || accounts.bank?._id)
+
+      await models.Supplier.findByIdAndUpdate(supplierId, {
+        $inc: { currentBalance: -paymentAmount }
+      })
+
+      if (resolvedAccountId) {
+        await models.Account.findByIdAndUpdate(resolvedAccountId, {
+          $inc: { currentBalance: -paymentAmount }
+        })
+      }
+
+      const descriptionParts = [`Supplier payment: ${supplier.name}`]
+      if (notes) descriptionParts.push(String(notes))
+
+      const expenseCount = await models.Expense.countDocuments()
+      const expenseNumber = `EXP-${Date.now()}-${expenseCount + 1}`
+
+      const expense = await models.Expense.create({
+        expenseNumber,
+        store: supplier.store,
+        description: descriptionParts.join(' - '),
+        amount: paymentAmount,
+        category: 'Supplier Payment',
+        account: resolvedAccountId,
+        transactionType: 'CREDIT',
+        expenseDate: paymentDate ? new Date(paymentDate) : new Date(),
+        createdBy: recordedBy,
+        paymentMethod: method || 'Account Transfer'
+      })
+
+      if (resolvedAccountId) {
+        await createAccountTransaction({
+          storeId: String(supplier.store),
+          createdBy: recordedBy ? String(recordedBy) : String(supplier._id),
+          description: `Supplier payment ${supplier.name}`,
+          referenceType: 'SUPPLIER_PAYMENT',
+          referenceId: String(expense._id),
+          accountId: resolvedAccountId,
+          entryType: 'CREDIT',
+          amount: paymentAmount,
+          transactionDate: paymentDate ? new Date(paymentDate) : new Date()
+        })
+      }
+
+      return toJSON({ success: true, data: expense })
     } catch (error: any) {
       return { success: false, error: error.message }
     }
@@ -1699,7 +1762,16 @@ export function registerIpcHandlers() {
       saleData.paidAmount = paidAmount
 
       let customerId: mongoose.Types.ObjectId | null = null
-      if (saleData.paymentMethod === 'Credit' && saleData.customerName && saleData.customerPhone) {
+      if (saleData.customer) {
+        customerId = new mongoose.Types.ObjectId(String(saleData.customer))
+      }
+
+      if (
+        saleData.paymentMethod === 'Credit' &&
+        !saleData.customer &&
+        saleData.customerName &&
+        saleData.customerPhone
+      ) {
         const trimmedName = String(saleData.customerName).trim()
         const trimmedPhone = String(saleData.customerPhone).trim()
 
@@ -1720,9 +1792,11 @@ export function registerIpcHandlers() {
 
         customerId = customer._id
         saleData.customer = customerId
-        saleData.customerName = trimmedName
-        saleData.customerPhone = trimmedPhone
       }
+
+      delete saleData.customerName
+      delete saleData.customerPhone
+      delete saleData.customerEmail
 
       const remainingAmount = Math.max(0, totalAmount - paidAmount)
       if (saleData.paymentMethod === 'Credit') {
@@ -1950,16 +2024,25 @@ export function registerIpcHandlers() {
           query.paymentStatus = status.toUpperCase()
         }
 
-        // Search by invoice number or customer name
+        // Search by invoice number or customer details
         if (search) {
-          query.$or = [
-            { invoiceNumber: { $regex: search, $options: 'i' } },
-            { customerName: { $regex: search, $options: 'i' } }
-          ]
+          const searchRegex = new RegExp(search, 'i')
+          const customers = await models.Customer.find({
+            store: storeId,
+            $or: [{ name: searchRegex }, { phone: searchRegex }]
+          })
+            .select('_id')
+            .lean()
+          const customerIds = customers.map((customer) => customer._id)
+          query.$or = [{ invoiceNumber: { $regex: search, $options: 'i' } }]
+          if (customerIds.length > 0) {
+            query.$or.push({ customer: { $in: customerIds } })
+          }
         }
 
         const total = await models.Sale.countDocuments(query)
         const sales = await models.Sale.find(query)
+          .populate('customer', 'name phone')
           .populate('soldBy', 'fullName')
           .skip((page - 1) * pageSize)
           .limit(pageSize)
@@ -1995,7 +2078,10 @@ export function registerIpcHandlers() {
           }
         }
 
-        const sales = await models.Sale.find(query).sort({ saleDate: -1 }).lean()
+        const sales = await models.Sale.find(query)
+          .populate('customer', 'name phone')
+          .sort({ saleDate: -1 })
+          .lean()
 
         const summary = sales.reduce(
           (acc, sale) => {
@@ -2072,6 +2158,7 @@ export function registerIpcHandlers() {
   ipcMain.handle('sales:getById', async (_event, id) => {
     try {
       const sale = await models.Sale.findById(id)
+        .populate('customer', 'name phone')
         .populate('soldBy', 'fullName')
         .populate('paymentHistory.recordedBy', 'fullName')
         .lean()
@@ -2508,12 +2595,13 @@ export function registerIpcHandlers() {
         .reverse()
 
       const recentSales = await models.Sale.find({ store: storeId })
+        .populate('customer', 'name')
         .sort({ createdAt: -1 })
         .limit(5)
         .lean()
         .then((sales) =>
           sales.map((s) => ({
-            customerName: s.customerName,
+            customer: s.customer ? { name: (s.customer as any).name } : null,
             createdAt: s.createdAt,
             totalAmount: s.totalAmount,
             paymentStatus: s.paymentStatus

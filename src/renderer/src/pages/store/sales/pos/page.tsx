@@ -46,6 +46,8 @@ import { z } from 'zod'
 import { useForm, useWatch, type Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Form, FormControl, FormField, FormItem } from '@renderer/components/ui/form'
+import { Label } from '@renderer/components/ui/label'
+import { SearchableSelect } from '@renderer/components/shared/searchable-select'
 import { useNavigate } from 'react-router-dom'
 import { printContent } from '@renderer/lib/print-utils'
 
@@ -100,6 +102,13 @@ interface Store {
   phone?: string
 }
 
+interface Customer {
+  _id: string
+  name: string
+  phone: string
+  email?: string
+}
+
 interface SaleItem {
   productName: string
   quantity: number
@@ -128,6 +137,11 @@ export default function POSPage() {
   const [products, setProducts] = useState<Product[]>([])
   const [currentStore, setCurrentStore] = useState<Store | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [customers, setCustomers] = useState<Customer[]>([])
+  const [isCustomersLoading, setIsCustomersLoading] = useState(false)
+  const [customerMode, setCustomerMode] = useState<'existing' | 'new'>('existing')
+  const [selectedCustomerId, setSelectedCustomerId] = useState('')
+  const [newCustomer, setNewCustomer] = useState({ name: '', phone: '', email: '' })
 
   // Raw material meters sheet
   const [meterSheetOpen, setMeterSheetOpen] = useState(false)
@@ -509,6 +523,48 @@ export default function POSPage() {
     }
   }
 
+  useEffect(() => {
+    if (!meterSheetOpen) return
+
+    const handleMeterShortcuts = (event: KeyboardEvent) => {
+      if (event.altKey || event.metaKey || event.ctrlKey) return
+
+      const key = event.key
+      if (key === 'Enter') {
+        event.preventDefault()
+        confirmMeters()
+        return
+      }
+      if (key === 'Escape') {
+        event.preventDefault()
+        handleMeterSheetChange(false)
+        return
+      }
+      if (key === 'Backspace') {
+        event.preventDefault()
+        handleMeterKey('back')
+        return
+      }
+      if (key === 'Delete') {
+        event.preventDefault()
+        handleMeterKey('clear')
+        return
+      }
+      if (key === '.') {
+        event.preventDefault()
+        handleMeterKey('.')
+        return
+      }
+      if (/^[0-9]$/.test(key)) {
+        event.preventDefault()
+        handleMeterKey(key)
+      }
+    }
+
+    window.addEventListener('keydown', handleMeterShortcuts)
+    return () => window.removeEventListener('keydown', handleMeterShortcuts)
+  }, [meterSheetOpen, confirmMeters, handleMeterKey, handleMeterSheetChange])
+
   const formatQuantity = (item: CartItem) =>
     item.productKind === 'RAW_MATERIAL' ? item.quantity.toFixed(1) : item.quantity
 
@@ -545,18 +601,89 @@ export default function POSPage() {
     }
   }, [paymentMethod])
 
+  const loadCustomers = async () => {
+    if (!currentStore?._id) return
+    setIsCustomersLoading(true)
+    try {
+      const result = await window.api.customers.getAll({
+        storeId: currentStore._id,
+        page: 1,
+        pageSize: 500
+      })
+      if (result.success) {
+        setCustomers(result.data || [])
+      } else {
+        toast.error('Failed to load customers')
+      }
+    } catch (error) {
+      toast.error('Error loading customers')
+    } finally {
+      setIsCustomersLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    if (creditDialogOpen) {
+      setSelectedCustomerId(form.getValues('customerId') || '')
+      void loadCustomers()
+    }
+  }, [creditDialogOpen])
+
+  const selectedCustomer = customers.find((customer) => customer._id === selectedCustomerId)
+
   const handleCreditSave = async () => {
-    const isValid = await form.trigger(['customerId', 'creditPaidAmount'])
+    const isValid = await form.trigger(['creditPaidAmount'])
     if (!isValid) return
 
-    if (paymentMethod === 'Credit') {
-      if (!form.getValues('customerId')?.trim()) {
-        toast.error('Customer ID is required for credit sales.')
-        return
-      }
+    if (paymentMethod !== 'Credit') {
+      setCreditDialogOpen(false)
+      return
     }
 
-    setCreditDialogOpen(false)
+    if (customerMode === 'existing') {
+      if (!selectedCustomerId) {
+        toast.error('Please select a customer for credit sales.')
+        return
+      }
+      form.setValue('customerId', selectedCustomerId)
+      setCreditDialogOpen(false)
+      return
+    }
+
+    if (!newCustomer.name.trim() || !newCustomer.phone.trim()) {
+      toast.error('Customer name and phone are required.')
+      return
+    }
+
+    if (!currentStore?._id) {
+      toast.error('Store not selected.')
+      return
+    }
+
+    try {
+      const result = await window.api.customers.create({
+        store: currentStore._id,
+        name: newCustomer.name.trim(),
+        phone: newCustomer.phone.trim(),
+        email: newCustomer.email.trim() || undefined
+      })
+
+      if (!result.success) {
+        toast.error(result.error || 'Failed to create customer')
+        return
+      }
+
+      const createdCustomer = result.data as Customer
+      setCustomers((prev) => [createdCustomer, ...prev])
+      setSelectedCustomerId(createdCustomer._id)
+      form.setValue('customerId', createdCustomer._id)
+      setCustomerMode('existing')
+      setNewCustomer({ name: '', phone: '', email: '' })
+      setCreditDialogOpen(false)
+      toast.success('Customer created')
+    } catch (error: any) {
+      toast.error(error?.message || 'Failed to create customer')
+    }
   }
 
   const onSubmit = async (values: CheckoutFormValues) => {
@@ -1133,7 +1260,10 @@ export default function POSPage() {
                       Customer Summary
                     </div>
                     <div className="text-sm font-bold text-foreground">
-                      ID: {formValues.customerId}
+                      {selectedCustomer?.name || 'Customer'}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {selectedCustomer?.phone || `ID: ${formValues.customerId}`}
                     </div>
                   </div>
                 )}
@@ -1326,22 +1456,95 @@ export default function POSPage() {
             <DialogDescription>Capture customer information for credit sales.</DialogDescription>
           </DialogHeader>
           <Form {...form}>
-            <div className="space-y-3">
-              <FormField
-                control={form.control}
-                name="customerId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormControl>
-                      <Input
-                        placeholder="Customer ID"
-                        {...field}
-                        className="h-11 bg-muted/50 border-border font-bold"
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className={`h-10 text-xs font-black uppercase border-2 transition-all ${
+                    customerMode === 'existing'
+                      ? 'bg-[#4ade80] text-black border-[#4ade80]'
+                      : 'bg-transparent text-foreground border-border'
+                  }`}
+                  onClick={() => setCustomerMode('existing')}
+                >
+                  Existing Customer
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className={`h-10 text-xs font-black uppercase border-2 transition-all ${
+                    customerMode === 'new'
+                      ? 'bg-[#4ade80] text-black border-[#4ade80]'
+                      : 'bg-transparent text-foreground border-border'
+                  }`}
+                  onClick={() => setCustomerMode('new')}
+                >
+                  Add New
+                </Button>
+              </div>
+
+              {customerMode === 'existing' ? (
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold uppercase text-muted-foreground">
+                    Select Customer
+                  </Label>
+                  <SearchableSelect
+                    value={selectedCustomerId}
+                    onValueChange={setSelectedCustomerId}
+                    options={customers.map((customer) => ({
+                      value: customer._id,
+                      label: `${customer.name} (${customer.phone})`
+                    }))}
+                    placeholder={isCustomersLoading ? 'Loading customers...' : 'Choose customer'}
+                    emptyText="No customers found"
+                    disabled={isCustomersLoading}
+                  />
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div className="space-y-2">
+                    <Label className="text-xs font-bold uppercase text-muted-foreground">
+                      Customer Name
+                    </Label>
+                    <Input
+                      placeholder="Customer name"
+                      value={newCustomer.name}
+                      onChange={(e) =>
+                        setNewCustomer((prev) => ({ ...prev, name: e.target.value }))
+                      }
+                      className="h-11 bg-muted/50 border-border font-bold"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs font-bold uppercase text-muted-foreground">
+                      Phone
+                    </Label>
+                    <Input
+                      placeholder="Phone number"
+                      value={newCustomer.phone}
+                      onChange={(e) =>
+                        setNewCustomer((prev) => ({ ...prev, phone: e.target.value }))
+                      }
+                      className="h-11 bg-muted/50 border-border font-bold"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs font-bold uppercase text-muted-foreground">
+                      Email (optional)
+                    </Label>
+                    <Input
+                      placeholder="Email address"
+                      value={newCustomer.email}
+                      onChange={(e) =>
+                        setNewCustomer((prev) => ({ ...prev, email: e.target.value }))
+                      }
+                      className="h-11 bg-muted/50 border-border font-bold"
+                    />
+                  </div>
+                </div>
+              )}
+
               <FormField
                 control={form.control}
                 name="creditPaidAmount"
@@ -1424,6 +1627,9 @@ export default function POSPage() {
               >
                 CLEAR
               </Button>
+            </div>
+            <div className="rounded-lg border border-border bg-muted/30 px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+              Enter=Add • Esc=Close • Backspace=Delete • Del=Clear • 0-9/.=Input
             </div>
           </div>
           <SheetFooter>

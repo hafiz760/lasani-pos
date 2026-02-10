@@ -1,5 +1,4 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@renderer/components/ui/dialog'
-import { Button } from '@renderer/components/ui/button'
 import { Package, Ruler, Layers } from 'lucide-react'
 
 interface ProductTypeModalProps {

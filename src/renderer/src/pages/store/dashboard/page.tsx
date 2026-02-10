@@ -260,7 +260,7 @@ function AdminDashboard({ stats, user }: { stats: any; user: any }) {
                   <div key={i} className="flex items-center">
                     <Avatar className="h-9 w-9 border border-border">
                       <AvatarFallback className="bg-[#4ade80]/10 text-sm text-[#4ade80] font-bold">
-                        {(sale.customerName || 'Walk-In')
+                        {(sale.customer?.name || 'Walk-In')
                           .split(' ')
                           .map((n: any) => n[0])
                           .join('')}
@@ -268,7 +268,7 @@ function AdminDashboard({ stats, user }: { stats: any; user: any }) {
                     </Avatar>
                     <div className="ml-4 space-y-1">
                       <p className="text-sm font-medium leading-none">
-                        {sale.customerName || 'Walk-In Customer'}
+                        {sale.customer?.name || 'Walk-In Customer'}
                       </p>
                       <p className="text-xs text-muted-foreground">
                         {format(new Date(sale.createdAt), 'MMM dd, HH:mm')}

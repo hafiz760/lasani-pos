@@ -3,14 +3,12 @@ import { Upload, X } from 'lucide-react'
 interface ProductImagesProps {
   imagePreviews: string[]
   setImagePreviews: React.Dispatch<React.SetStateAction<string[]>>
-  selectedFiles: File[]
   setSelectedFiles: React.Dispatch<React.SetStateAction<File[]>>
 }
 
 export function ProductImages({
   imagePreviews,
   setImagePreviews,
-  selectedFiles,
   setSelectedFiles
 }: ProductImagesProps) {
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {

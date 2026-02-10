@@ -55,8 +55,7 @@ interface SaleDetail {
   createdAt: string
   saleDate?: string
   soldBy?: { fullName?: string }
-  customerName?: string
-  customer?: string
+  customer?: { name?: string; phone?: string }
   items: SaleItem[]
   subtotal?: number
   taxAmount?: number
@@ -364,9 +363,7 @@ export default function SalesDetailPage() {
               </div>
               <div>
                 <div className="text-xs uppercase text-muted-foreground">Customer</div>
-                <div className="font-semibold">
-                  {sale.customerName || (sale.customer ? `ID: ${sale.customer}` : 'Walk-in')}
-                </div>
+                <div className="font-semibold">{sale.customer?.name || 'Walk-in'}</div>
               </div>
             </div>
 

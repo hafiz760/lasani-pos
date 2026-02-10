@@ -31,7 +31,7 @@ const ExpenseSchema = new Schema<IExpense>(
     category: {
       type: String,
       required: true,
-      enum: ['Rent', 'Utilities', 'Salary', 'Marketing', 'Maintenance', 'Other']
+      enum: ['Rent', 'Utilities', 'Salary', 'Marketing', 'Maintenance', 'Supplier Payment', 'Other']
     },
     amount: {
       type: Number,

@@ -41,6 +41,7 @@ declare global {
         update: (id: string, data: any) => Promise<any>
         delete: (id: string) => Promise<any>
         getById: (id: string) => Promise<any>
+        recordPayment: (supplierId: string, paymentData: any) => Promise<any>
       }
       customers: {
         getAll: (params?: any) => Promise<any>

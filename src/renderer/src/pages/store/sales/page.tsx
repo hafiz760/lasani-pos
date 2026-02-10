@@ -25,7 +25,6 @@ import {
   TableHeader,
   TableRow
 } from '@renderer/components/ui/table'
-import { printContent } from '@renderer/lib/print-utils'
 import { useNavigate } from 'react-router-dom'
 
 type GroupBy = 'day' | 'week' | 'month'
@@ -62,8 +61,7 @@ interface SaleItem {
   paymentChannel?: string
   totalAmount: number
   paidAmount: number
-  customerName?: string
-  customer?: string
+  customer?: { name?: string; phone?: string }
 }
 
 interface SalesReportData {
@@ -165,6 +163,142 @@ export default function SalesPage() {
 
   const formatCurrency = (value: number) => `Rs. ${Number(value || 0).toLocaleString()}`
 
+  const buildReportHtml = () => {
+    if (!report) return ''
+    const storeStr = localStorage.getItem('selectedStore')
+    const store = storeStr ? JSON.parse(storeStr) : null
+
+    return `
+      <div style="font-family: 'Inter', sans-serif; padding: 20px; color: #111;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #e5e7eb; padding-bottom: 12px;">
+          <div>
+            <h2 style="margin: 0; font-size: 20px;">Sales Report</h2>
+            <p style="margin: 4px 0 0; color: #6b7280; font-size: 12px;">Range: ${rangeLabel}</p>
+          </div>
+          <div style="text-align: right; font-size: 12px; color: #6b7280;">
+            <div>Generated: ${format(new Date(), 'MMM dd, yyyy HH:mm')}</div>
+            <div>Group: ${groupBy.toUpperCase()}</div>
+          </div>
+        </div>
+
+        <div style="margin-top: 12px; padding: 10px 12px; border: 1px solid #e5e7eb; border-radius: 8px;">
+          <div style="font-size: 11px; text-transform: uppercase; color: #6b7280;">Store Details</div>
+          <div style="font-size: 14px; font-weight: 600; margin-top: 4px;">
+            ${store?.name || 'Store'}
+          </div>
+          <div style="font-size: 12px; color: #6b7280; margin-top: 2px;">
+            ${store?.address || 'Address not available'}
+          </div>
+          <div style="font-size: 12px; color: #6b7280;">
+            ${store?.phone ? `Tel: ${store.phone}` : 'Phone not available'}
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 16px 0;">
+          <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px;">
+            <div style="font-size: 11px; text-transform: uppercase; color: #6b7280;">Total Sales</div>
+            <div style="font-size: 16px; font-weight: 700;">${formatCurrency(
+              report.summary.totalSales
+            )}</div>
+          </div>
+          <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px;">
+            <div style="font-size: 11px; text-transform: uppercase; color: #6b7280;">Paid Sales</div>
+            <div style="font-size: 16px; font-weight: 700;">${formatCurrency(
+              report.summary.totalPaid
+            )}</div>
+          </div>
+          <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px;">
+            <div style="font-size: 11px; text-transform: uppercase; color: #6b7280;">Pending Balance</div>
+            <div style="font-size: 16px; font-weight: 700;">${formatCurrency(
+              report.summary.totalPending
+            )}</div>
+          </div>
+          <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px;">
+            <div style="font-size: 11px; text-transform: uppercase; color: #6b7280;">Profit</div>
+            <div style="font-size: 16px; font-weight: 700;">${formatCurrency(
+              report.summary.totalProfit
+            )}</div>
+          </div>
+        </div>
+
+        <div style="margin-top: 20px;">
+          <h3 style="margin: 0 0 8px; font-size: 14px;">Sales Summary</h3>
+          <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+            <thead>
+              <tr style="background: #f3f4f6; text-align: left;">
+                <th style="padding: 8px;">Invoice</th>
+                <th style="padding: 8px;">Date</th>
+                <th style="padding: 8px;">Payment</th>
+                <th style="padding: 8px;">Status</th>
+                <th style="padding: 8px; text-align: right;">Total</th>
+                <th style="padding: 8px; text-align: right;">Paid</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${report.sales
+                .map(
+                  (sale) => `
+                    <tr style="border-bottom: 1px solid #e5e7eb;">
+                      <td style="padding: 8px;">${sale.invoiceNumber}</td>
+                      <td style="padding: 8px;">${format(
+                        new Date(sale.saleDate),
+                        'MMM dd, yyyy'
+                      )}</td>
+                      <td style="padding: 8px;">${sale.paymentMethod}${
+                        sale.paymentChannel ? ` (${sale.paymentChannel})` : ''
+                      }</td>
+                      <td style="padding: 8px;">${sale.paymentStatus}</td>
+                      <td style="padding: 8px; text-align: right;">${formatCurrency(
+                        sale.totalAmount
+                      )}</td>
+                      <td style="padding: 8px; text-align: right;">${formatCurrency(
+                        sale.paidAmount
+                      )}</td>
+                    </tr>
+                  `
+                )
+                .join('')}
+            </tbody>
+          </table>
+        </div>
+
+        <div style="margin-top: 20px;">
+          <h3 style="margin: 0 0 8px; font-size: 14px;">${
+            groupBy === 'day'
+              ? 'Daily Breakdown'
+              : groupBy === 'week'
+                ? 'Weekly Breakdown'
+                : 'Monthly Breakdown'
+          }</h3>
+          <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+            <thead>
+              <tr style="background: #f3f4f6; text-align: left;">
+                <th style="padding: 8px;">Period</th>
+                <th style="padding: 8px; text-align: right;">Orders</th>
+                <th style="padding: 8px; text-align: right;">Sales</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${report.grouped
+                .map(
+                  (group) => `
+                    <tr style="border-bottom: 1px solid #e5e7eb;">
+                      <td style="padding: 8px;">${group._id}</td>
+                      <td style="padding: 8px; text-align: right;">${group.count}</td>
+                      <td style="padding: 8px; text-align: right;">${formatCurrency(
+                        group.totalAmount
+                      )}</td>
+                    </tr>
+                  `
+                )
+                .join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `
+  }
+
   const statusBadge = (status: SaleItem['paymentStatus']) => {
     if (status === 'PAID') return 'bg-emerald-500/10 text-emerald-600'
     if (status === 'PARTIAL') return 'bg-amber-500/10 text-amber-600'
@@ -246,139 +380,9 @@ export default function SalesPage() {
                     toast.error('Generate a report before printing.')
                     return
                   }
-                  const storeStr = localStorage.getItem('selectedStore')
-                  const store = storeStr ? JSON.parse(storeStr) : null
-                  const content = `
-                    <div style="font-family: 'Inter', sans-serif; padding: 20px; color: #111;">
-                      <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #e5e7eb; padding-bottom: 12px;">
-                        <div>
-                          <h2 style="margin: 0; font-size: 20px;">Sales Report</h2>
-                          <p style="margin: 4px 0 0; color: #6b7280; font-size: 12px;">Range: ${rangeLabel}</p>
-                        </div>
-                        <div style="text-align: right; font-size: 12px; color: #6b7280;">
-                          <div>Generated: ${format(new Date(), 'MMM dd, yyyy HH:mm')}</div>
-                          <div>Group: ${groupBy.toUpperCase()}</div>
-                        </div>
-                      </div>
-
-                      <div style="margin-top: 12px; padding: 10px 12px; border: 1px solid #e5e7eb; border-radius: 8px;">
-                        <div style="font-size: 11px; text-transform: uppercase; color: #6b7280;">Store Details</div>
-                        <div style="font-size: 14px; font-weight: 600; margin-top: 4px;">
-                          ${store?.name || 'Store'}
-                        </div>
-                        <div style="font-size: 12px; color: #6b7280; margin-top: 2px;">
-                          ${store?.address || 'Address not available'}
-                        </div>
-                        <div style="font-size: 12px; color: #6b7280;">
-                          ${store?.phone ? `Tel: ${store.phone}` : 'Phone not available'}
-                        </div>
-                      </div>
-
-                      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 16px 0;">
-                        <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px;">
-                          <div style="font-size: 11px; text-transform: uppercase; color: #6b7280;">Total Sales</div>
-                          <div style="font-size: 16px; font-weight: 700;">${formatCurrency(
-                            report.summary.totalSales
-                          )}</div>
-                        </div>
-                        <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px;">
-                          <div style="font-size: 11px; text-transform: uppercase; color: #6b7280;">Paid Sales</div>
-                          <div style="font-size: 16px; font-weight: 700;">${formatCurrency(
-                            report.summary.totalPaid
-                          )}</div>
-                        </div>
-                        <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px;">
-                          <div style="font-size: 11px; text-transform: uppercase; color: #6b7280;">Pending Balance</div>
-                          <div style="font-size: 16px; font-weight: 700;">${formatCurrency(
-                            report.summary.totalPending
-                          )}</div>
-                        </div>
-                        <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px;">
-                          <div style="font-size: 11px; text-transform: uppercase; color: #6b7280;">Profit</div>
-                          <div style="font-size: 16px; font-weight: 700;">${formatCurrency(
-                            report.summary.totalProfit
-                          )}</div>
-                        </div>
-                      </div>
-
-                      <div style="margin-top: 20px;">
-                        <h3 style="margin: 0 0 8px; font-size: 14px;">Sales Summary</h3>
-                        <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
-                          <thead>
-                            <tr style="background: #f3f4f6; text-align: left;">
-                              <th style="padding: 8px;">Invoice</th>
-                              <th style="padding: 8px;">Date</th>
-                              <th style="padding: 8px;">Payment</th>
-                              <th style="padding: 8px;">Status</th>
-                              <th style="padding: 8px; text-align: right;">Total</th>
-                              <th style="padding: 8px; text-align: right;">Paid</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            ${report.sales
-                              .map(
-                                (sale) => `
-                                  <tr style="border-bottom: 1px solid #e5e7eb;">
-                                    <td style="padding: 8px;">${sale.invoiceNumber}</td>
-                                    <td style="padding: 8px;">${format(
-                                      new Date(sale.saleDate),
-                                      'MMM dd, yyyy'
-                                    )}</td>
-                                    <td style="padding: 8px;">${sale.paymentMethod}${
-                                      sale.paymentChannel ? ` (${sale.paymentChannel})` : ''
-                                    }</td>
-                                    <td style="padding: 8px;">${sale.paymentStatus}</td>
-                                    <td style="padding: 8px; text-align: right;">${formatCurrency(
-                                      sale.totalAmount
-                                    )}</td>
-                                    <td style="padding: 8px; text-align: right;">${formatCurrency(
-                                      sale.paidAmount
-                                    )}</td>
-                                  </tr>
-                                `
-                              )
-                              .join('')}
-                          </tbody>
-                        </table>
-                      </div>
-
-                      <div style="margin-top: 20px;">
-                        <h3 style="margin: 0 0 8px; font-size: 14px;">${
-                          groupBy === 'day'
-                            ? 'Daily Breakdown'
-                            : groupBy === 'week'
-                              ? 'Weekly Breakdown'
-                              : 'Monthly Breakdown'
-                        }</h3>
-                        <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
-                          <thead>
-                            <tr style="background: #f3f4f6; text-align: left;">
-                              <th style="padding: 8px;">Period</th>
-                              <th style="padding: 8px; text-align: right;">Orders</th>
-                              <th style="padding: 8px; text-align: right;">Sales</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            ${report.grouped
-                              .map(
-                                (group) => `
-                                  <tr style="border-bottom: 1px solid #e5e7eb;">
-                                    <td style="padding: 8px;">${group._id}</td>
-                                    <td style="padding: 8px; text-align: right;">${group.count}</td>
-                                    <td style="padding: 8px; text-align: right;">${formatCurrency(
-                                      group.totalAmount
-                                    )}</td>
-                                  </tr>
-                                `
-                              )
-                              .join('')}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  `
-
-                  void printContent({ title: 'Sales Report', content })
+                  const content = buildReportHtml()
+                  sessionStorage.setItem('salesReportPreview', content)
+                  navigate('/dashboard/reports/sales-report/preview')
                 }}
               >
                 <Printer className="h-4 w-4" />

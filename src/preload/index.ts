@@ -27,7 +27,9 @@ const api = {
     getById: (id) => ipcRenderer.invoke('suppliers:getById', id),
     create: (data) => ipcRenderer.invoke('suppliers:create', data),
     update: (id, data) => ipcRenderer.invoke('suppliers:update', { id, data }),
-    delete: (id) => ipcRenderer.invoke('suppliers:delete', id)
+    delete: (id) => ipcRenderer.invoke('suppliers:delete', id),
+    recordPayment: (supplierId, paymentData) =>
+      ipcRenderer.invoke('suppliers:recordPayment', { supplierId, paymentData })
   },
   customers: {
     getAll: (params) => ipcRenderer.invoke('customers:getAll', params),

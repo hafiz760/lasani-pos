@@ -1,5 +1,14 @@
 import { useEffect, useState } from 'react'
 import { Input } from '@renderer/components/ui/input'
+import { Button } from '@renderer/components/ui/button'
+import { LoadingButton } from '@renderer/components/ui/loading-button'
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle
+} from '@renderer/components/ui/dialog'
 import {
   FormControl,
   FormField,
@@ -15,12 +24,29 @@ import {
   SelectTrigger,
   SelectValue
 } from '@renderer/components/ui/select'
+import { toast } from 'sonner'
+import { z } from 'zod'
+import { useForm, type SubmitHandler } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { Form } from '@renderer/components/ui/form'
 
 interface SupplierInventorySectionProps {
   form: any
   currentStore: any
   productKind: 'SIMPLE' | 'RAW_MATERIAL' | 'COMBO_SET'
 }
+
+const supplierSchema = z.object({
+  name: z.string().min(2, 'Name must be at least 2 characters'),
+  contactPerson: z.string().optional().or(z.literal('')),
+  phone: z.string().optional().or(z.literal('')),
+  email: z.string().email('Invalid email address').optional().or(z.literal('')),
+  address: z.string().optional().or(z.literal('')),
+  city: z.string().optional().or(z.literal('')),
+  openingBalance: z.coerce.number().default(0)
+})
+
+type SupplierFormValues = z.infer<typeof supplierSchema>
 
 export function SupplierInventorySection({
   form,
@@ -29,6 +55,8 @@ export function SupplierInventorySection({
 }: SupplierInventorySectionProps) {
   const [suppliers, setSuppliers] = useState<any[]>([])
   const [isLoadingSuppliers, setIsLoadingSuppliers] = useState(false)
+  const [isAddSupplierOpen, setIsAddSupplierOpen] = useState(false)
+  const [isSupplierSubmitting, setIsSupplierSubmitting] = useState(false)
 
   const isRawMaterial = productKind === 'RAW_MATERIAL'
   const isComboSet = productKind === 'COMBO_SET'
@@ -58,6 +86,19 @@ export function SupplierInventorySection({
     loadSuppliers()
   }, [currentStore?._id])
 
+  const supplierForm = useForm<SupplierFormValues>({
+    resolver: zodResolver(supplierSchema) as any,
+    defaultValues: {
+      name: '',
+      contactPerson: '',
+      phone: '',
+      email: '',
+      address: '',
+      city: '',
+      openingBalance: 0
+    }
+  })
+
   const loadSuppliers = async () => {
     if (!currentStore?._id) return
     setIsLoadingSuppliers(true)
@@ -77,12 +118,46 @@ export function SupplierInventorySection({
     }
   }
 
+  const onSupplierSubmit: SubmitHandler<SupplierFormValues> = async (values) => {
+    if (!currentStore?._id) return
+    setIsSupplierSubmitting(true)
+    try {
+      const result = await window.api.suppliers.create({
+        ...values,
+        store: currentStore._id
+      })
+      if (result.success) {
+        toast.success('Supplier created successfully')
+        setSuppliers((prev) => [result.data, ...prev])
+        form.setValue('supplier', result.data._id)
+        supplierForm.reset()
+        setIsAddSupplierOpen(false)
+      } else {
+        toast.error(result.error || 'Failed to create supplier')
+      }
+    } catch (error: any) {
+      toast.error(error?.message || 'Failed to create supplier')
+    } finally {
+      setIsSupplierSubmitting(false)
+    }
+  }
+
   return (
     <div className="bg-gradient-to-br from-blue-500/10 to-purple-500/5 border-2 border-blue-500/30 rounded-lg p-6">
-      <h2 className="text-lg font-semibold mb-4 text-blue-600 flex items-center gap-2">
-        <Package className="w-5 h-5" />
-        Supplier, Pricing & Stock
-      </h2>
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+        <h2 className="text-lg font-semibold text-blue-600 flex items-center gap-2">
+          <Package className="w-5 h-5" />
+          Supplier, Pricing & Stock
+        </h2>
+        <Button
+          type="button"
+          variant="outline"
+          className="h-10 border-blue-500/20 bg-black"
+          onClick={() => setIsAddSupplierOpen(true)}
+        >
+          Add Supplier
+        </Button>
+      </div>
 
       <div className="space-y-6">
         {/* Row 1: Supplier */}
@@ -92,29 +167,31 @@ export function SupplierInventorySection({
           render={({ field }) => (
             <FormItem>
               <FormLabel>Supplier *</FormLabel>
-              <Select
-                onValueChange={field.onChange}
-                value={field.value}
-                disabled={isLoadingSuppliers}
-              >
-                <FormControl>
-                  <SelectTrigger className="bg-background border-blue-500/20 h-12">
-                    <SelectValue placeholder="Select supplier..." />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent className="bg-popover border-border">
-                  {suppliers.map((supplier) => (
-                    <SelectItem key={supplier._id} value={supplier._id}>
-                      {supplier.name}
-                      {supplier.currentBalance > 0 && (
-                        <span className="ml-2 text-xs text-red-400">
-                          (Balance: Rs. {supplier.currentBalance.toLocaleString()})
-                        </span>
-                      )}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex flex-col gap-2">
+                <Select
+                  onValueChange={field.onChange}
+                  value={field.value}
+                  disabled={isLoadingSuppliers}
+                >
+                  <FormControl>
+                    <SelectTrigger className="bg-background border-blue-500/20 h-12">
+                      <SelectValue placeholder="Select supplier..." />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent className="bg-popover border-border">
+                    {suppliers.map((supplier) => (
+                      <SelectItem key={supplier._id} value={supplier._id}>
+                        {supplier.name}
+                        {supplier.currentBalance > 0 && (
+                          <span className="ml-2 text-xs text-red-400">
+                            (Balance: Rs. {supplier.currentBalance.toLocaleString()})
+                          </span>
+                        )}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
               <FormMessage />
               <p className="text-xs text-muted-foreground mt-1">Select supplier to track balance</p>
             </FormItem>
@@ -271,6 +348,130 @@ export function SupplierInventorySection({
           )}
         </div>
       )}
+
+      <Dialog open={isAddSupplierOpen} onOpenChange={setIsAddSupplierOpen}>
+        <DialogContent className="bg-background border-border text-foreground">
+          <DialogHeader>
+            <DialogTitle>Add Supplier</DialogTitle>
+          </DialogHeader>
+          <Form {...supplierForm}>
+            <form onSubmit={supplierForm.handleSubmit(onSupplierSubmit)} className="space-y-4">
+              <FormField
+                control={supplierForm.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Supplier Name</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="Supplier name" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={supplierForm.control}
+                name="contactPerson"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Contact Person</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="Contact person" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={supplierForm.control}
+                name="phone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Phone</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="Phone number" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={supplierForm.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="Email address" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <FormField
+                  control={supplierForm.control}
+                  name="address"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Address</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="Street address" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={supplierForm.control}
+                  name="city"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>City</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="City" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              <FormField
+                control={supplierForm.control}
+                name="openingBalance"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Opening Balance</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        value={field.value === 0 ? '' : field.value}
+                        onChange={(e) =>
+                          field.onChange(e.target.value === '' ? 0 : Number(e.target.value))
+                        }
+                        placeholder="0"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setIsAddSupplierOpen(false)}>
+                  Cancel
+                </Button>
+                <LoadingButton
+                  type="submit"
+                  isLoading={isSupplierSubmitting}
+                  loadingText="Saving..."
+                >
+                  Create Supplier
+                </LoadingButton>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

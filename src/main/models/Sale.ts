@@ -37,9 +37,6 @@ export interface IRefundRecord {
 export interface ISale extends Document {
   invoiceNumber: string
   customer?: mongoose.Types.ObjectId
-  customerName?: string
-  customerPhone?: string
-  customerEmail?: string
   saleDate: Date
   items: ISaleItem[]
   subtotal: number
@@ -116,16 +113,6 @@ const SaleSchema = new Schema<ISale>(
     customer: {
       type: Schema.Types.ObjectId,
       ref: 'Customer'
-    },
-    customerName: {
-      type: String
-    },
-    customerPhone: {
-      type: String
-    },
-    customerEmail: {
-      type: String,
-      lowercase: true
     },
     saleDate: {
       type: Date,

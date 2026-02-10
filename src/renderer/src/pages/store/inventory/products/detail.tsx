@@ -50,14 +50,6 @@ export default function ProductDetails() {
     return 'pcs'
   }
 
-  const formatStock = (stock: number) => {
-    const unit = getStockUnit()
-    if (product?.productKind === 'RAW_MATERIAL') {
-      return `${stock.toFixed(1)} ${unit}`
-    }
-    return `${stock} ${unit}`
-  }
-
   const getProductTypeLabel = () => {
     if (!product) return 'Simple Product'
     if (product.productKind === 'RAW_MATERIAL') return 'Raw Material (Fabric)'

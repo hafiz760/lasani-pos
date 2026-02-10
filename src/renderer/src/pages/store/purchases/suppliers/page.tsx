@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { DataPage } from '@renderer/components/shared/data-page'
 import { LoadingButton } from '@renderer/components/ui/loading-button'
 import { Button } from '@renderer/components/ui/button'
-import { MoreVertical, Edit, Trash2, Mail, MapPin, Eye } from "lucide-react";
+import { MoreVertical, Edit, Trash2, Mail, MapPin, Eye, Wallet } from 'lucide-react'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,6 +31,13 @@ import {
   FormMessage
 } from '@renderer/components/ui/form'
 import { Input } from '@renderer/components/ui/input'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@renderer/components/ui/select'
 
 const supplierSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -50,6 +57,14 @@ export default function SuppliersPage() {
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [editingSupplier, setEditingSupplier] = useState<any>(null)
   const [deleteId, setDeleteId] = useState<string | null>(null)
+  const [isPaymentOpen, setIsPaymentOpen] = useState(false)
+  const [isPaymentSubmitting, setIsPaymentSubmitting] = useState(false)
+  const [selectedSupplier, setSelectedSupplier] = useState<any>(null)
+  const [accounts, setAccounts] = useState<any[]>([])
+  const [paymentAmount, setPaymentAmount] = useState('')
+  const [paymentAccount, setPaymentAccount] = useState('')
+  const [paymentNotes, setPaymentNotes] = useState('')
+  const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split('T')[0])
 
   const [suppliers, setSuppliers] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -58,8 +73,8 @@ export default function SuppliersPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
 
-  const [currentStore, setCurrentStore] = useState<any>(null);
-  const navigate = useNavigate();
+  const [currentStore, setCurrentStore] = useState<any>(null)
+  const navigate = useNavigate()
 
   useEffect(() => {
     const storeData = localStorage.getItem('selectedStore')
@@ -90,8 +105,21 @@ export default function SuppliersPage() {
     }
   }
 
+  const loadAccounts = async () => {
+    if (!currentStore?._id) return
+    try {
+      const result = await window.api.accounts.getAll({ storeId: currentStore._id, pageSize: 200 })
+      if (result.success) {
+        setAccounts(result.data)
+      }
+    } catch (error) {
+      toast.error('Failed to load accounts')
+    }
+  }
+
   useEffect(() => {
     loadSuppliers()
+    loadAccounts()
   }, [currentStore?._id, page, pageSize, searchTerm])
 
   const form = useForm<SupplierFormValues>({
@@ -167,6 +195,50 @@ export default function SuppliersPage() {
       openingBalance: supplier.openingBalance || 0
     })
     setIsFormOpen(true)
+  }
+
+  const openPaymentDialog = (supplier: any) => {
+    setSelectedSupplier(supplier)
+    setPaymentAmount(supplier.currentBalance?.toString() || '')
+    setPaymentAccount('')
+    setPaymentNotes('')
+    setPaymentDate(new Date().toISOString().split('T')[0])
+    setIsPaymentOpen(true)
+  }
+
+  const handleRecordPayment = async () => {
+    if (!selectedSupplier || !paymentAmount) return
+    if (!paymentAccount) {
+      toast.error('Select a payment account')
+      return
+    }
+    setIsPaymentSubmitting(true)
+    try {
+      const userStr = localStorage.getItem('user')
+      const user = userStr ? JSON.parse(userStr) : null
+      const result = await window.api.suppliers.recordPayment(selectedSupplier._id, {
+        amount: parseFloat(paymentAmount),
+        accountId: paymentAccount,
+        paymentDate,
+        notes: paymentNotes,
+        recordedBy: user?._id || user?.id,
+        method: 'Account Transfer'
+      })
+
+      if (result.success) {
+        toast.success('Supplier payment recorded')
+        setIsPaymentOpen(false)
+        setPaymentAmount('')
+        setPaymentNotes('')
+        loadSuppliers()
+      } else {
+        toast.error(result.error || 'Failed to record payment')
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to record payment')
+    } finally {
+      setIsPaymentSubmitting(false)
+    }
   }
 
   const openAdd = () => {
@@ -253,6 +325,14 @@ export default function SuppliersPage() {
             className="bg-popover border-border text-popover-foreground"
             align="end"
           >
+            <DropdownMenuItem
+              onClick={() => openPaymentDialog(item)}
+              className="focus:bg-[#4ade80] focus:text-black cursor-pointer"
+              disabled={!item.currentBalance || item.currentBalance <= 0}
+            >
+              <Wallet className="w-4 h-4 mr-2" />
+              Record Payment
+            </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => navigate(`/dashboard/purchases/suppliers/${item._id}`)}
               className="focus:bg-[#4ade80] focus:text-black cursor-pointer"
@@ -444,6 +524,80 @@ export default function SuppliersPage() {
         isDeleting={isDeleting}
         description="This will permanently delete this supplier. They will no longer appear in new purchase orders."
       />
+
+      <Dialog open={isPaymentOpen} onOpenChange={setIsPaymentOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Record Supplier Payment</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="rounded-lg border border-border bg-muted/30 p-3">
+              <div className="text-sm font-semibold text-foreground">
+                {selectedSupplier?.name || 'Supplier'}
+              </div>
+              <div className="text-xs text-muted-foreground">
+                Balance: Rs. {(selectedSupplier?.currentBalance || 0).toLocaleString()}
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-muted-foreground">Payment Date</label>
+                <Input
+                  type="date"
+                  value={paymentDate}
+                  onChange={(e) => setPaymentDate(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-muted-foreground">Amount</label>
+                <Input
+                  type="number"
+                  value={paymentAmount}
+                  onChange={(e) => setPaymentAmount(e.target.value)}
+                  placeholder="0"
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs font-semibold text-muted-foreground">Payment Account</label>
+              <Select value={paymentAccount} onValueChange={setPaymentAccount}>
+                <SelectTrigger className="bg-muted border-border">
+                  <SelectValue placeholder="Select Account" />
+                </SelectTrigger>
+                <SelectContent className="bg-popover border-border text-popover-foreground">
+                  {accounts.map((acc) => (
+                    <SelectItem key={acc._id} value={acc._id}>
+                      {acc.accountName} (Rs. {acc.currentBalance.toLocaleString()})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs font-semibold text-muted-foreground">
+                Notes (Optional)
+              </label>
+              <Input
+                value={paymentNotes}
+                onChange={(e) => setPaymentNotes(e.target.value)}
+                placeholder="Payment notes"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsPaymentOpen(false)}>
+              Cancel
+            </Button>
+            <LoadingButton
+              isLoading={isPaymentSubmitting}
+              loadingText="Recording..."
+              onClick={handleRecordPayment}
+            >
+              Record Payment
+            </LoadingButton>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   )
 }

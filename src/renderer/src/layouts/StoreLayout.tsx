@@ -11,7 +11,6 @@ import {
   Menu,
   X,
   Smartphone,
-  Truck,
   Wallet,
   ChevronRight,
   Bell,
@@ -46,7 +45,6 @@ const storeMenuItems = [
       { label: 'Attributes', href: '/dashboard/inventory/attributes' }
     ]
   },
-  { icon: Truck, label: 'Purchase Orders', href: '/dashboard/purchases/orders' },
   { icon: Users, label: 'Suppliers', href: '/dashboard/purchases/suppliers' },
   {
     icon: Wallet,

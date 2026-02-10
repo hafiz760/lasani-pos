@@ -358,7 +358,6 @@ export default function CreateProductPage() {
           <ProductImages
             imagePreviews={imagePreviews}
             setImagePreviews={setImagePreviews}
-            selectedFiles={selectedFiles}
             setSelectedFiles={setSelectedFiles}
           />
 
