@@ -29,6 +29,15 @@ const api = {
     update: (id, data) => ipcRenderer.invoke('suppliers:update', { id, data }),
     delete: (id) => ipcRenderer.invoke('suppliers:delete', id)
   },
+  customers: {
+    getAll: (params) => ipcRenderer.invoke('customers:getAll', params),
+    getById: (id) => ipcRenderer.invoke('customers:getById', id),
+    create: (data) => ipcRenderer.invoke('customers:create', data),
+    update: (id, data) => ipcRenderer.invoke('customers:update', { id, data }),
+    delete: (id) => ipcRenderer.invoke('customers:delete', id),
+    recordPayment: (customerId, paymentData) =>
+      ipcRenderer.invoke('customers:recordPayment', { customerId, paymentData })
+  },
   purchaseOrders: {
     getAll: (params) => ipcRenderer.invoke('purchaseOrders:getAll', params),
     getLastSupply: (params) => ipcRenderer.invoke('purchaseOrders:getLastSupply', params),
@@ -95,8 +104,11 @@ const api = {
     getAll: (params) => ipcRenderer.invoke('sales:getAll', params),
     getById: (id) => ipcRenderer.invoke('sales:getById', id),
     delete: (id) => ipcRenderer.invoke('sales:delete', id),
-    recordPayment: (saleId, paymentData) => ipcRenderer.invoke('sales:recordPayment', { saleId, paymentData }),
-    getPendingStats: (storeId) => ipcRenderer.invoke('sales:getPendingStats', { storeId })
+    recordPayment: (saleId, paymentData) =>
+      ipcRenderer.invoke('sales:recordPayment', { saleId, paymentData }),
+    getPendingStats: (storeId) => ipcRenderer.invoke('sales:getPendingStats', { storeId }),
+    getReport: (params) => ipcRenderer.invoke('sales:getReport', params),
+    refund: (saleId, payload) => ipcRenderer.invoke('sales:refund', { saleId, ...payload })
   },
   accounts: {
     getAll: (params) => ipcRenderer.invoke('accounts:getAll', params),
@@ -107,6 +119,9 @@ const api = {
   expenses: {
     getAll: (params) => ipcRenderer.invoke('expenses:getAll', params),
     create: (data) => ipcRenderer.invoke('expenses:create', data)
+  },
+  transactions: {
+    getAll: (params) => ipcRenderer.invoke('transactions:getAll', params)
   },
   printer: {
     printReceipt: (html: string) => ipcRenderer.invoke('printer:printReceipt', html)

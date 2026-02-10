@@ -17,9 +17,85 @@ const toJSON = (data: any) => {
   }
 }
 
+const createAccountTransaction = async ({
+  storeId,
+  createdBy,
+  description,
+  referenceType,
+  referenceId,
+  accountId,
+  entryType,
+  amount,
+  transactionDate
+}: {
+  storeId: string
+  createdBy: string
+  description: string
+  referenceType: string
+  referenceId?: string
+  accountId: string
+  entryType: 'DEBIT' | 'CREDIT'
+  amount: number
+  transactionDate?: Date
+}) => {
+  if (!accountId || amount <= 0) return
+  await models.Transaction.create({
+    transactionDate: transactionDate || new Date(),
+    referenceType,
+    referenceId,
+    description,
+    entries: [
+      {
+        account: accountId,
+        entryType,
+        amount
+      }
+    ],
+    totalAmount: amount,
+    store: storeId,
+    createdBy
+  })
+}
+
 export function registerIpcHandlers() {
   console.log('📡 Registering IPC handlers...')
   console.log('Available models:', mongoose.modelNames())
+
+  const ensureDefaultAccounts = async (storeId: string) => {
+    const cashAccount = await models.Account.findOne({
+      store: storeId,
+      accountName: 'Cash in Hand'
+    })
+
+    const bankAccount = await models.Account.findOne({
+      store: storeId,
+      accountName: 'Bank'
+    })
+
+    const cash =
+      cashAccount ||
+      (await models.Account.create({
+        accountCode: '1001',
+        accountName: 'Cash in Hand',
+        accountType: 'ASSET',
+        store: storeId,
+        openingBalance: 0,
+        currentBalance: 0
+      }))
+
+    const bank =
+      bankAccount ||
+      (await models.Account.create({
+        accountCode: '1002',
+        accountName: 'Bank',
+        accountType: 'ASSET',
+        store: storeId,
+        openingBalance: 0,
+        currentBalance: 0
+      }))
+
+    return { cash, bank }
+  }
 
   // Auth Handlers
   ipcMain.handle('auth:login', async (_event, { email, password }) => {
@@ -361,7 +437,9 @@ export function registerIpcHandlers() {
         .populate('supplier', 'name')
         .lean()
 
-      console.log(`✅ Retrieved ${history.length} inventory history records for product ${productId}`)
+      console.log(
+        `✅ Retrieved ${history.length} inventory history records for product ${productId}`
+      )
 
       return { success: true, data: history }
     } catch (error: any) {
@@ -369,8 +447,6 @@ export function registerIpcHandlers() {
       return { success: false, error: error.message, data: [] }
     }
   })
-
-
 
   // Category Handlers
   ipcMain.handle('categories:getAll', async (_event, { storeId, includeInactive = false } = {}) => {
@@ -487,17 +563,20 @@ export function registerIpcHandlers() {
   })
 
   // Attribute Handlers
-  ipcMain.handle('attributes:getAll', async (_event, { storeId, type, includeInactive = false } = {}) => {
-    try {
-      const query: any = { store: storeId }
-      if (type) query.type = type
-      if (!includeInactive) query.isActive = true
-      const attributes = await models.Attribute.find(query).sort({ type: 1, name: 1 }).lean()
-      return toJSON({ success: true, data: attributes })
-    } catch (error: any) {
-      return { success: false, error: error.message }
+  ipcMain.handle(
+    'attributes:getAll',
+    async (_event, { storeId, type, includeInactive = false } = {}) => {
+      try {
+        const query: any = { store: storeId }
+        if (type) query.type = type
+        if (!includeInactive) query.isActive = true
+        const attributes = await models.Attribute.find(query).sort({ type: 1, name: 1 }).lean()
+        return toJSON({ success: true, data: attributes })
+      } catch (error: any) {
+        return { success: false, error: error.message }
+      }
     }
-  })
+  )
 
   ipcMain.handle('attributes:create', async (_event, data) => {
     try {
@@ -619,7 +698,6 @@ export function registerIpcHandlers() {
 
         stockQuantity = initialQuantity || 0
         totalCost = buyingPrice * stockQuantity
-
       } else if (productData.productKind === 'RAW_MATERIAL') {
         // ✅ RAW MATERIAL - Use METERS only (no suit calculation)
         productData.baseUnit = 'meter'
@@ -635,7 +713,6 @@ export function registerIpcHandlers() {
 
         stockQuantity = productData.totalMeters
         totalCost = buyingPrice * productData.totalMeters // ← Cost per meter
-
       } else if (productData.productKind === 'COMBO_SET') {
         // COMBO SET - Handle later
         productData.baseUnit = 'set'
@@ -675,13 +752,10 @@ export function registerIpcHandlers() {
 
         // Update supplier balance
         if (supplier && supplier !== null && totalCost > 0) {
-          await models.Supplier.findByIdAndUpdate(
-            supplier,
-            {
-              $inc: { currentBalance: totalCost },
-              $addToSet: { products: createdProduct._id }
-            }
-          )
+          await models.Supplier.findByIdAndUpdate(supplier, {
+            $inc: { currentBalance: totalCost },
+            $addToSet: { products: createdProduct._id }
+          })
 
           console.log(`✅ Supplier balance increased by Rs. ${totalCost}`)
         }
@@ -692,56 +766,56 @@ export function registerIpcHandlers() {
       console.log(`   Stock: ${productData.stockLevel} ${productData.baseUnit}`)
 
       return { success: true, data: createdProduct.toObject() }
-
     } catch (error: any) {
       console.error('❌ Product creation failed:', error)
       return { success: false, error: error.message }
     }
   })
 
+  ipcMain.handle(
+    'products:restock',
+    async (_event, { productId, supplierId, quantity, unitCost, sellingPrice }) => {
+      try {
+        // 1. Find product first
+        const product = await models.Product.findById(productId)
 
-  ipcMain.handle('products:restock', async (_event, { productId, supplierId, quantity, unitCost, sellingPrice }) => {
-    try {
-      // 1. Find product first
-      const product = await models.Product.findById(productId)
+        if (!product) {
+          return { success: false, error: 'Product not found' }
+        }
 
-      if (!product) {
-        return { success: false, error: 'Product not found' }
+        // 2. Update fields based on product type
+        if (product.productKind === 'RAW_MATERIAL') {
+          // For Raw Material, quantity represents meters
+          product.totalMeters = (product.totalMeters || 0) + quantity
+          // stockLevel will be auto-calculated in pre-save hook
+        } else {
+          // For Simple Product, quantity represents units
+          product.stockLevel = (product.stockLevel || 0) + quantity
+        }
+
+        // Update prices
+        product.buyingPrice = unitCost
+        product.sellingPrice = sellingPrice
+
+        // 3. Save product (triggers pre-save hook for calculations)
+        await product.save()
+
+        // 4. Update supplier balance and add product to supplier's products array
+        // For Raw Material: unitCost (per meter) * quantity (meters) = Total Cost
+        // For Simple: unitCost (per unit) * quantity (units) = Total Cost
+        const totalCost = unitCost * quantity
+
+        await models.Supplier.findByIdAndUpdate(supplierId, {
+          $inc: { currentBalance: totalCost },
+          $addToSet: { products: productId }
+        })
+
+        return toJSON({ success: true, data: product.toObject() })
+      } catch (error: any) {
+        return { success: false, error: error.message }
       }
-
-      // 2. Update fields based on product type
-      if (product.productKind === 'RAW_MATERIAL') {
-        // For Raw Material, quantity represents meters
-        product.totalMeters = (product.totalMeters || 0) + quantity
-        // stockLevel will be auto-calculated in pre-save hook
-      } else {
-        // For Simple Product, quantity represents units
-        product.stockLevel = (product.stockLevel || 0) + quantity
-      }
-
-      // Update prices
-      product.buyingPrice = unitCost
-      product.sellingPrice = sellingPrice
-
-      // 3. Save product (triggers pre-save hook for calculations)
-      await product.save()
-
-      // 4. Update supplier balance and add product to supplier's products array
-      // For Raw Material: unitCost (per meter) * quantity (meters) = Total Cost
-      // For Simple: unitCost (per unit) * quantity (units) = Total Cost
-      const totalCost = unitCost * quantity
-
-      await models.Supplier.findByIdAndUpdate(supplierId, {
-        $inc: { currentBalance: totalCost },
-        $addToSet: { products: productId }
-      })
-
-      return toJSON({ success: true, data: product.toObject() })
-    } catch (error: any) {
-      return { success: false, error: error.message }
     }
-  })
-
+  )
 
   // ============================================================
   // PRODUCT UPDATE HANDLER
@@ -855,7 +929,6 @@ export function registerIpcHandlers() {
         finalStockLevel = existingProduct.stockLevel
         finalTotalMeters = existingProduct.totalMeters || 0
         // Supplier cannot be changed - we'll just ignore it
-
       } else {
         // ✏️ FULL EDIT MODE - No sales yet
         console.log('✏️ No sales - Full editing allowed')
@@ -1028,9 +1101,6 @@ export function registerIpcHandlers() {
     }
   })
 
-
-
-
   // ============================================================
   // CHECK IF PRODUCT HAS SALES
   // ============================================================
@@ -1051,37 +1121,29 @@ export function registerIpcHandlers() {
     }
   })
 
-
-
   // ============================================================
-// GET INITIAL STOCK ENTRY WITH SUPPLIER
-// ============================================================
-ipcMain.handle('products:getInitialStockEntry', async (_event, productId) => {
-  try {
-    const stockEntry = await models.StockEntry.findOne({
-      product: productId,
-      entryType: 'INITIAL_STOCK'
-    })
-      .sort({ createdAt: 1 })
-      .populate('supplier')
-      .lean()
+  // GET INITIAL STOCK ENTRY WITH SUPPLIER
+  // ============================================================
+  ipcMain.handle('products:getInitialStockEntry', async (_event, productId) => {
+    try {
+      const stockEntry = await models.StockEntry.findOne({
+        product: productId,
+        entryType: 'INITIAL_STOCK'
+      })
+        .sort({ createdAt: 1 })
+        .populate('supplier')
+        .lean()
 
-    if (!stockEntry) {
-      return { success: true, data: null }
+      if (!stockEntry) {
+        return { success: true, data: null }
+      }
+
+      return { success: true, data: stockEntry }
+    } catch (error: any) {
+      console.error('❌ Failed to get stock entry:', error)
+      return { success: false, error: error.message }
     }
-
-    return { success: true, data: stockEntry }
-  } catch (error: any) {
-    console.error('❌ Failed to get stock entry:', error)
-    return { success: false, error: error.message }
-  }
-})
-
-
-
-
-
-
+  })
 
   // ============================================================
   // HELPER: UPDATE INITIAL STOCK ENTRY & SUPPLIER BALANCE
@@ -1168,7 +1230,6 @@ ipcMain.handle('products:getInitialStockEntry', async (_event, productId) => {
           totalCost: newTotal,
           supplier: newSupplier // ✅ Update supplier in stock entry
         })
-
       } else {
         // Supplier didn't change, just adjust the balance
         if (initialStockEntry.supplier) {
@@ -1193,10 +1254,6 @@ ipcMain.handle('products:getInitialStockEntry', async (_event, productId) => {
     }
   }
 
-
-
-
-
   ipcMain.handle('products:getById', async (_event, id) => {
     try {
       const product = await models.Product.findById(id)
@@ -1212,10 +1269,21 @@ ipcMain.handle('products:getInitialStockEntry', async (_event, productId) => {
 
   ipcMain.handle('products:delete', async (_event, id) => {
     try {
-      // In a real POS, we might want to check for dependency in sales or purchases
-      // For now, let's just delete or deactivate
+      const hasSales = await models.Sale.exists({ 'items.product': id })
+      if (hasSales) {
+        const product = await models.Product.findByIdAndUpdate(
+          id,
+          { isActive: false },
+          { new: true }
+        )
+        return {
+          success: true,
+          data: product,
+          archived: true
+        }
+      }
       await models.Product.findByIdAndDelete(id)
-      return { success: true }
+      return { success: true, archived: false }
     } catch (error: any) {
       return { success: false, error: error.message }
     }
@@ -1336,6 +1404,144 @@ ipcMain.handle('products:getInitialStockEntry', async (_event, productId) => {
         .lean()
       if (!supplier) return { success: false, error: 'Supplier not found' }
       return toJSON({ success: true, data: supplier })
+    } catch (error: any) {
+      return { success: false, error: error.message }
+    }
+  })
+
+  // Customers Handlers
+  ipcMain.handle(
+    'customers:getAll',
+    async (_event, { storeId, page = 1, pageSize = 20, search = '' } = {}) => {
+      try {
+        const query: any = { store: storeId }
+        if (search) {
+          query.$or = [
+            { name: { $regex: search, $options: 'i' } },
+            { phone: { $regex: search, $options: 'i' } }
+          ]
+        }
+
+        const total = await models.Customer.countDocuments(query)
+        const customers = await models.Customer.find(query)
+          .sort({ createdAt: -1 })
+          .skip((page - 1) * pageSize)
+          .limit(pageSize)
+          .lean()
+
+        return toJSON({
+          success: true,
+          data: customers,
+          total,
+          page,
+          totalPages: Math.ceil(total / pageSize)
+        })
+      } catch (error: any) {
+        return { success: false, error: error.message }
+      }
+    }
+  )
+
+  ipcMain.handle('customers:create', async (_event, data) => {
+    try {
+      const customer = await models.Customer.create(data)
+      return toJSON({ success: true, data: customer })
+    } catch (error: any) {
+      return { success: false, error: error.message }
+    }
+  })
+
+  ipcMain.handle('customers:update', async (_event, { id, data }) => {
+    try {
+      const customer = await models.Customer.findByIdAndUpdate(id, data, { new: true }).lean()
+      return toJSON({ success: true, data: customer })
+    } catch (error: any) {
+      return { success: false, error: error.message }
+    }
+  })
+
+  ipcMain.handle('customers:delete', async (_event, id) => {
+    try {
+      const salesCount = await models.Sale.countDocuments({ customer: id })
+      if (salesCount > 0) {
+        return { success: false, error: 'Cannot delete customer with sales history' }
+      }
+      await models.Customer.findByIdAndDelete(id)
+      return { success: true }
+    } catch (error: any) {
+      return { success: false, error: error.message }
+    }
+  })
+
+  ipcMain.handle('customers:getById', async (_event, id) => {
+    try {
+      const customer = await models.Customer.findById(id).lean()
+      if (!customer) return { success: false, error: 'Customer not found' }
+      return toJSON({ success: true, data: customer })
+    } catch (error: any) {
+      return { success: false, error: error.message }
+    }
+  })
+
+  ipcMain.handle('customers:recordPayment', async (_event, { customerId, paymentData }) => {
+    try {
+      const customer = await models.Customer.findById(customerId)
+      if (!customer) return { success: false, error: 'Customer not found' }
+
+      const outstandingSales = await models.Sale.find({
+        customer: customerId,
+        paymentStatus: { $in: ['PENDING', 'PARTIAL'] }
+      }).sort({ saleDate: 1 })
+
+      const totalOutstanding = outstandingSales.reduce(
+        (sum, sale) => sum + Math.max(0, sale.totalAmount - sale.paidAmount),
+        0
+      )
+
+      if (totalOutstanding <= 0) {
+        return { success: false, error: 'Customer has no outstanding balance' }
+      }
+
+      let remainingPayment = Math.min(Number(paymentData.amount) || 0, totalOutstanding)
+      if (remainingPayment <= 0) {
+        return { success: false, error: 'Payment amount must be greater than zero' }
+      }
+
+      for (const sale of outstandingSales) {
+        if (remainingPayment <= 0) break
+
+        const saleRemaining = Math.max(0, sale.totalAmount - sale.paidAmount)
+        if (saleRemaining <= 0) continue
+
+        const appliedAmount = Math.min(remainingPayment, saleRemaining)
+        sale.paidAmount += appliedAmount
+        sale.paymentHistory.push({
+          date: new Date(),
+          amount: appliedAmount,
+          method: paymentData.method,
+          notes: paymentData.notes || '',
+          recordedBy: paymentData.recordedBy
+        })
+
+        if (sale.paidAmount >= sale.totalAmount) {
+          sale.paymentStatus = 'PAID'
+        } else {
+          sale.paymentStatus = 'PARTIAL'
+        }
+
+        await sale.save()
+        remainingPayment -= appliedAmount
+      }
+
+      const appliedTotal = Math.min(Number(paymentData.amount) || 0, totalOutstanding)
+      customer.balance = Math.max(0, customer.balance - appliedTotal)
+      await customer.save()
+
+      return toJSON({
+        success: true,
+        data: customer.toObject(),
+        appliedAmount: appliedTotal
+      })
     } catch (error: any) {
       return { success: false, error: error.message }
     }
@@ -1487,8 +1693,57 @@ ipcMain.handle('products:getInitialStockEntry', async (_event, productId) => {
 
   ipcMain.handle('sales:create', async (_event, data) => {
     try {
+      const saleData = { ...data }
+      const totalAmount = Number(saleData.totalAmount) || 0
+      const paidAmount = Math.min(Number(saleData.paidAmount) || 0, totalAmount)
+      saleData.paidAmount = paidAmount
+
+      let customerId: mongoose.Types.ObjectId | null = null
+      if (saleData.paymentMethod === 'Credit' && saleData.customerName && saleData.customerPhone) {
+        const trimmedName = String(saleData.customerName).trim()
+        const trimmedPhone = String(saleData.customerPhone).trim()
+
+        const customer = await models.Customer.findOneAndUpdate(
+          { store: saleData.store, phone: trimmedPhone },
+          {
+            $set: {
+              name: trimmedName,
+              phone: trimmedPhone
+            },
+            $setOnInsert: {
+              balance: 0,
+              store: saleData.store
+            }
+          },
+          { new: true, upsert: true }
+        )
+
+        customerId = customer._id
+        saleData.customer = customerId
+        saleData.customerName = trimmedName
+        saleData.customerPhone = trimmedPhone
+      }
+
+      const remainingAmount = Math.max(0, totalAmount - paidAmount)
+      if (saleData.paymentMethod === 'Credit') {
+        saleData.paymentStatus =
+          remainingAmount === 0 ? 'PAID' : paidAmount > 0 ? 'PARTIAL' : 'PENDING'
+      }
+
+      if (saleData.paymentMethod === 'Credit' && paidAmount > 0) {
+        saleData.paymentHistory = [
+          {
+            date: new Date(),
+            amount: paidAmount,
+            method: saleData.paymentMethod,
+            notes: 'Initial payment',
+            recordedBy: saleData.soldBy
+          }
+        ]
+      }
+
       // 1. Create Sale
-      const sale = await models.Sale.create(data)
+      const sale = await models.Sale.create(saleData)
 
       // 2. Update Product Stock (Decrease)
       if (sale.items && sale.items.length > 0) {
@@ -1499,6 +1754,41 @@ ipcMain.handle('products:getInitialStockEntry', async (_event, productId) => {
             })
           }
         }
+      }
+
+      if (customerId && remainingAmount > 0) {
+        await models.Customer.findByIdAndUpdate(customerId, {
+          $inc: { balance: remainingAmount }
+        })
+      }
+
+      if (paidAmount > 0) {
+        const accounts = await ensureDefaultAccounts(String(saleData.store))
+        const accountId =
+          saleData.paymentMethod === 'Bank Transfer'
+            ? String(accounts.bank._id)
+            : String(accounts.cash._id)
+        if (saleData.paymentMethod === 'Bank Transfer') {
+          await models.Account.findByIdAndUpdate(accounts.bank._id, {
+            $inc: { currentBalance: paidAmount }
+          })
+        } else {
+          await models.Account.findByIdAndUpdate(accounts.cash._id, {
+            $inc: { currentBalance: paidAmount }
+          })
+        }
+
+        await createAccountTransaction({
+          storeId: String(saleData.store),
+          createdBy: String(saleData.soldBy),
+          description: `Sale ${sale.invoiceNumber || sale._id}`,
+          referenceType: 'SALE',
+          referenceId: String(sale._id),
+          accountId,
+          entryType: 'DEBIT',
+          amount: paidAmount,
+          transactionDate: sale.saleDate || new Date()
+        })
       }
 
       return toJSON({ success: true, data: sale })
@@ -1523,12 +1813,131 @@ ipcMain.handle('products:getInitialStockEntry', async (_event, productId) => {
         }
       }
 
+      const remainingAmount = Math.max(0, sale.totalAmount - sale.paidAmount)
+      if (sale.customer && remainingAmount > 0) {
+        await models.Customer.findByIdAndUpdate(sale.customer, {
+          $inc: { balance: -remainingAmount }
+        })
+      }
+
       await models.Sale.findByIdAndDelete(id)
       return { success: true }
     } catch (error: any) {
       return { success: false, error: error.message }
     }
   })
+
+  ipcMain.handle(
+    'sales:refund',
+    async (_event, { saleId, refundItems, method, reason, processedBy }) => {
+      try {
+        const sale = await models.Sale.findById(saleId)
+        if (!sale) return { success: false, error: 'Sale not found' }
+
+        const refundedAmount = Number(sale.refundedAmount || 0)
+        const maxRefundable = Math.max(0, (sale.paidAmount || 0) - refundedAmount)
+        if (maxRefundable <= 0) {
+          return { success: false, error: 'No refundable amount available.' }
+        }
+
+        const refundItemsNormalized = (refundItems || [])
+          .map((item: any) => ({
+            product: String(item.product),
+            quantity: Number(item.quantity || 0)
+          }))
+          .filter((item: any) => item.product && item.quantity > 0)
+
+        if (refundItemsNormalized.length === 0) {
+          return { success: false, error: 'Select at least one item to refund.' }
+        }
+
+        const refundedQtyByProduct = new Map<string, number>()
+        if (sale.refundHistory?.length) {
+          sale.refundHistory.forEach((record) => {
+            record.items?.forEach((item: any) => {
+              const key = String(item.product)
+              refundedQtyByProduct.set(key, (refundedQtyByProduct.get(key) || 0) + item.quantity)
+            })
+          })
+        }
+
+        let totalRefund = 0
+        const refundLineItems = [] as Array<{ product: any; quantity: number; amount: number }>
+
+        for (const refundItem of refundItemsNormalized) {
+          const saleItem = sale.items.find(
+            (item: any) => String(item.product) === refundItem.product
+          )
+          if (!saleItem) {
+            return { success: false, error: 'Invalid refund item.' }
+          }
+
+          const alreadyRefunded = refundedQtyByProduct.get(refundItem.product) || 0
+          const availableQty = saleItem.quantity - alreadyRefunded
+          if (refundItem.quantity > availableQty) {
+            return { success: false, error: 'Refund quantity exceeds sold quantity.' }
+          }
+
+          const lineAmount = (saleItem.sellingPrice || 0) * refundItem.quantity
+          totalRefund += lineAmount
+          refundLineItems.push({
+            product: saleItem.product,
+            quantity: refundItem.quantity,
+            amount: lineAmount
+          })
+        }
+
+        if (totalRefund <= 0) {
+          return { success: false, error: 'Refund amount must be greater than 0.' }
+        }
+
+        if (totalRefund > maxRefundable) {
+          return { success: false, error: 'Refund amount exceeds paid amount.' }
+        }
+
+        for (const refundItem of refundLineItems) {
+          await models.Product.findByIdAndUpdate(refundItem.product, {
+            $inc: { stockLevel: refundItem.quantity }
+          })
+        }
+
+        sale.refundedAmount = refundedAmount + totalRefund
+        sale.refundHistory = sale.refundHistory || []
+        sale.refundHistory.push({
+          date: new Date(),
+          amount: totalRefund,
+          method: method || 'Cash',
+          reason,
+          processedBy,
+          items: refundLineItems
+        } as any)
+
+        await sale.save()
+
+        const accounts = await ensureDefaultAccounts(String(sale.store))
+        const accountId =
+          method === 'Bank Transfer' ? String(accounts.bank._id) : String(accounts.cash._id)
+        await models.Account.findByIdAndUpdate(accountId, {
+          $inc: { currentBalance: -totalRefund }
+        })
+
+        await createAccountTransaction({
+          storeId: String(sale.store),
+          createdBy: String(processedBy || sale.soldBy),
+          description: `Refund ${sale.invoiceNumber || sale._id}`,
+          referenceType: 'REFUND',
+          referenceId: String(sale._id),
+          accountId,
+          entryType: 'CREDIT',
+          amount: totalRefund
+        })
+
+        return toJSON({ success: true, data: sale })
+      } catch (error: any) {
+        return { success: false, error: error.message }
+      }
+    }
+  )
 
   ipcMain.handle(
     'sales:getAll',
@@ -1570,6 +1979,96 @@ ipcMain.handle('products:getInitialStockEntry', async (_event, productId) => {
     }
   )
 
+  ipcMain.handle(
+    'sales:getReport',
+    async (_event, { storeId, startDate, endDate, groupBy = 'day' }) => {
+      try {
+        const start = startDate ? new Date(startDate) : new Date(0)
+        const end = endDate ? new Date(endDate) : new Date()
+        end.setHours(23, 59, 59, 999)
+
+        const query = {
+          store: storeId,
+          saleDate: {
+            $gte: start,
+            $lte: end
+          }
+        }
+
+        const sales = await models.Sale.find(query).sort({ saleDate: -1 }).lean()
+
+        const summary = sales.reduce(
+          (acc, sale) => {
+            acc.totalSales += sale.totalAmount || 0
+            acc.totalPaid += sale.paidAmount || 0
+            acc.totalDiscount += sale.discountAmount || 0
+            acc.totalTax += sale.taxAmount || 0
+            acc.totalProfit += sale.profitAmount || 0
+            acc.totalCount += 1
+
+            if (sale.paymentStatus === 'PAID') acc.paidCount += 1
+            if (sale.paymentStatus === 'PENDING') acc.pendingCount += 1
+            if (sale.paymentStatus === 'PARTIAL') acc.partialCount += 1
+            return acc
+          },
+          {
+            totalSales: 0,
+            totalPaid: 0,
+            totalDiscount: 0,
+            totalTax: 0,
+            totalProfit: 0,
+            totalCount: 0,
+            paidCount: 0,
+            pendingCount: 0,
+            partialCount: 0
+          }
+        )
+
+        summary.totalPending = Math.max(0, summary.totalSales - summary.totalPaid)
+
+        const formatMap = {
+          day: '%Y-%m-%d',
+          week: '%G-W%V',
+          month: '%Y-%m'
+        }
+
+        const periodFormat = formatMap[groupBy] || formatMap.day
+
+        const grouped = await models.Sale.aggregate([
+          { $match: query },
+          {
+            $group: {
+              _id: {
+                $dateToString: {
+                  format: periodFormat,
+                  date: '$saleDate'
+                }
+              },
+              totalAmount: { $sum: '$totalAmount' },
+              paidAmount: { $sum: '$paidAmount' },
+              discountAmount: { $sum: '$discountAmount' },
+              taxAmount: { $sum: '$taxAmount' },
+              profitAmount: { $sum: '$profitAmount' },
+              count: { $sum: 1 }
+            }
+          },
+          { $sort: { _id: 1 } }
+        ])
+
+        return toJSON({
+          success: true,
+          data: {
+            summary,
+            grouped,
+            sales
+          }
+        })
+      } catch (error: any) {
+        return { success: false, error: error.message }
+      }
+    }
+  )
+
   ipcMain.handle('sales:getById', async (_event, id) => {
     try {
       const sale = await models.Sale.findById(id)
@@ -1589,11 +2088,17 @@ ipcMain.handle('products:getInitialStockEntry', async (_event, productId) => {
       const sale = await models.Sale.findById(saleId)
       if (!sale) return { success: false, error: 'Sale not found' }
 
+      const remaining = Math.max(0, sale.totalAmount - sale.paidAmount)
+      const appliedAmount = Math.min(Number(paymentData.amount) || 0, remaining)
+      if (appliedAmount <= 0) {
+        return { success: false, error: 'No outstanding balance for this sale' }
+      }
+
       // Update paid amount and add to payment history
-      sale.paidAmount += paymentData.amount
+      sale.paidAmount += appliedAmount
       sale.paymentHistory.push({
         date: new Date(),
-        amount: paymentData.amount,
+        amount: appliedAmount,
         method: paymentData.method,
         notes: paymentData.notes || '',
         recordedBy: paymentData.recordedBy
@@ -1607,6 +2112,40 @@ ipcMain.handle('products:getInitialStockEntry', async (_event, productId) => {
       }
 
       await sale.save()
+
+      if (sale.customer) {
+        await models.Customer.findByIdAndUpdate(sale.customer, {
+          $inc: { balance: -appliedAmount }
+        })
+      }
+
+      if (appliedAmount > 0) {
+        const accounts = await ensureDefaultAccounts(String(sale.store))
+        const method = String(paymentData?.method || '')
+        const accountId =
+          method === 'Bank Transfer' ? String(accounts.bank._id) : String(accounts.cash._id)
+        if (method === 'Bank Transfer') {
+          await models.Account.findByIdAndUpdate(accounts.bank._id, {
+            $inc: { currentBalance: appliedAmount }
+          })
+        } else {
+          await models.Account.findByIdAndUpdate(accounts.cash._id, {
+            $inc: { currentBalance: appliedAmount }
+          })
+        }
+
+        await createAccountTransaction({
+          storeId: String(sale.store),
+          createdBy: String(paymentData?.recordedBy || sale.soldBy),
+          description: `Payment for ${sale.invoiceNumber || sale._id}`,
+          referenceType: 'PAYMENT',
+          referenceId: String(sale._id),
+          accountId,
+          entryType: 'DEBIT',
+          amount: appliedAmount
+        })
+      }
+
       return toJSON({ success: true, data: sale })
     } catch (error: any) {
       return { success: false, error: error.message }
@@ -1762,8 +2301,21 @@ ipcMain.handle('products:getInitialStockEntry', async (_event, productId) => {
 
       // Update Account Balance (Decrease)
       if (data.account) {
+        const delta = data.transactionType === 'DEBIT' ? data.amount : -data.amount
         await models.Account.findByIdAndUpdate(data.account, {
-          $inc: { currentBalance: -data.amount }
+          $inc: { currentBalance: delta }
+        })
+
+        await createAccountTransaction({
+          storeId: String(data.store),
+          createdBy: String(data.createdBy),
+          description: `Expense ${expense.expenseNumber}`,
+          referenceType: 'EXPENSE',
+          referenceId: String(expense._id),
+          accountId: String(data.account),
+          entryType: data.transactionType === 'DEBIT' ? 'DEBIT' : 'CREDIT',
+          amount: data.amount,
+          transactionDate: data.expenseDate ? new Date(data.expenseDate) : new Date()
         })
       }
 
@@ -1772,6 +2324,45 @@ ipcMain.handle('products:getInitialStockEntry', async (_event, productId) => {
       return { success: false, error: error.message }
     }
   })
+
+  ipcMain.handle(
+    'transactions:getAll',
+    async (_event, { storeId, page = 1, pageSize = 20, search = '', startDate, endDate }) => {
+      try {
+        const query: any = { store: storeId }
+        if (startDate || endDate) {
+          const start = startDate ? new Date(startDate) : new Date(0)
+          const end = endDate ? new Date(endDate) : new Date()
+          end.setHours(23, 59, 59, 999)
+          query.transactionDate = { $gte: start, $lte: end }
+        }
+        if (search) {
+          query.$or = [
+            { description: { $regex: search, $options: 'i' } },
+            { referenceType: { $regex: search, $options: 'i' } }
+          ]
+        }
+
+        const total = await models.Transaction.countDocuments(query)
+        const data = await models.Transaction.find(query)
+          .populate('entries.account')
+          .populate('createdBy', 'fullName')
+          .skip((page - 1) * pageSize)
+          .limit(pageSize)
+          .sort({ transactionDate: -1 })
+          .lean()
+
+        return toJSON({
+          success: true,
+          data,
+          total,
+          totalPages: Math.ceil(total / pageSize)
+        })
+      } catch (error: any) {
+        return { success: false, error: error.message }
+      }
+    }
+  )
 
   // Printer Handler
   ipcMain.handle('printer:printReceipt', async (_event, html) => {
@@ -1878,8 +2469,11 @@ ipcMain.handle('products:getInitialStockEntry', async (_event, productId) => {
       const lowStockCount = products.filter((p) => p.stockLevel <= p.minStockLevel).length
 
       // Calculate total pending from unpaid sales
-      const pendingSales = sales.filter(s => s.paymentStatus !== 'PAID')
-      const totalPending = pendingSales.reduce((acc, sale) => acc + (sale.totalAmount - sale.paidAmount), 0)
+      const pendingSales = sales.filter((s) => s.paymentStatus !== 'PAID')
+      const totalPending = pendingSales.reduce(
+        (acc, sale) => acc + (sale.totalAmount - sale.paidAmount),
+        0
+      )
 
       // Get last 7 days chart data
       const sevenDaysAgo = new Date()

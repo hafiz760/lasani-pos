@@ -6,7 +6,7 @@ import {
   Plus,
   Minus,
   Package,
-  CheckCircle2,
+  Edit3,
   Printer,
   ShoppingBag,
   SearchX
@@ -14,7 +14,7 @@ import {
 import { LoadingButton } from '@renderer/components/ui/loading-button'
 import { Button } from '@renderer/components/ui/button'
 import { Input } from '@renderer/components/ui/input'
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@renderer/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@renderer/components/ui/card'
 import { ScrollArea } from '@renderer/components/ui/scroll-area'
 import { Badge } from '@renderer/components/ui/badge'
 import {
@@ -24,6 +24,14 @@ import {
   DialogTitle,
   DialogDescription
 } from '@renderer/components/ui/dialog'
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle
+} from '@renderer/components/ui/sheet'
 import {
   Table,
   TableBody,
@@ -35,59 +43,102 @@ import {
 import { toast } from 'sonner'
 import { format } from 'date-fns'
 import { z } from 'zod'
-import { useForm, useWatch } from 'react-hook-form'
+import { useForm, useWatch, type Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Form, FormControl, FormField, FormItem, FormMessage } from '@renderer/components/ui/form'
+import { Form, FormControl, FormField, FormItem } from '@renderer/components/ui/form'
 import { useNavigate } from 'react-router-dom'
 import { printContent } from '@renderer/lib/print-utils'
 
-// Color mapping (named colors to hex values)
-const COLOR_MAP: { [key: string]: string } = {
-  Green: '#4ade80',
-  Blue: '#60a5fa',
-  Red: '#f87171',
-  Amber: '#fbbf24',
-  Violet: '#a78bfa',
-  Pink: '#f472b6',
-  Orange: '#fb923c',
-  Teal: '#2dd4bf',
-  Indigo: '#818cf8',
-  Emerald: '#34d399',
-  Yellow: '#fde047',
-  Fuchsia: '#e879f9',
-  Purple: '#c084fc',
-  Slate: '#94a3b8',
-  Stone: '#a8a29e',
-  Black: '#000000',
-  White: '#ffffff',
-  Gray: '#475569',
-  Crimson: '#ef4444',
-  Sky: '#3b82f6'
-}
+const bankTransferOptions = ['JazzCash', 'EasyPaisa', 'Bank', 'Other'] as const
 
-const checkoutSchema = z.object({
-  customerName: z.string().optional().or(z.literal('')),
-  customerPhone: z.string().optional().or(z.literal('')),
-  customerEmail: z.string().email('Invalid email').optional().or(z.literal('')),
-  discountPercent: z.number().min(0).max(100),
-  discountAmount: z.number().min(0),
-  taxAmount: z.number().min(0),
-  paymentMethod: z.enum(['Cash', 'Card', 'Bank Transfer', 'Installment', 'Credit'])
-})
+const checkoutSchema = z
+  .object({
+    customerId: z.string().default(''),
+    discountPercent: z.coerce.number().min(0).max(100).default(0),
+    discountAmount: z.coerce.number().min(0).default(0),
+    taxAmount: z.coerce.number().min(0).default(0),
+    paymentMethod: z.enum(['Cash', 'Bank Transfer', 'Credit']),
+    paymentChannel: z.enum(bankTransferOptions).optional(),
+    creditPaidAmount: z.coerce.number().min(0).default(0)
+  })
+  .superRefine((values, ctx) => {
+    if (values.paymentMethod === 'Bank Transfer' && !values.paymentChannel) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Payment channel is required for bank transfer.',
+        path: ['paymentChannel']
+      })
+    }
+  })
 
 type CheckoutFormValues = z.infer<typeof checkoutSchema>
 
+interface Product {
+  _id: string
+  name: string
+  sku: string
+  barcode?: string
+  buyingPrice?: number
+  sellingPrice: number
+  stockLevel: number
+  productKind: 'SIMPLE' | 'RAW_MATERIAL'
+  isActive?: boolean
+  category?: { name: string }
+  images?: string[]
+  description?: string
+  quantity?: number // For meter entry logic
+}
+
+interface CartItem extends Product {
+  quantity: number
+}
+
+interface Store {
+  _id: string
+  name: string
+  address?: string
+  phone?: string
+}
+
+interface SaleItem {
+  productName: string
+  quantity: number
+  sellingPrice: number
+  totalAmount: number
+}
+
+interface Sale {
+  invoiceNumber: string
+  saleDate: Date
+  customer?: string
+  items: SaleItem[]
+  subtotal: number
+  taxAmount: number
+  discountAmount: number
+  totalAmount: number
+  paymentMethod: string
+  paymentChannel?: string
+  paymentStatus: string
+}
+
 export default function POSPage() {
   const navigate = useNavigate()
-  const [cart, setCart] = useState<any[]>([])
+  const [cart, setCart] = useState<CartItem[]>([])
   const [search, setSearch] = useState('')
-  const [products, setProducts] = useState<any[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [currentStore, setCurrentStore] = useState<any>(null)
+  const [products, setProducts] = useState<Product[]>([])
+  const [currentStore, setCurrentStore] = useState<Store | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
+  // Raw material meters sheet
+  const [meterSheetOpen, setMeterSheetOpen] = useState(false)
+  const [meterProduct, setMeterProduct] = useState<Product | null>(null)
+  const [meterInput, setMeterInput] = useState('')
+  const [isEditingMeters, setIsEditingMeters] = useState(false)
+  const meterInputRef = useRef<HTMLInputElement>(null)
+  const [creditDialogOpen, setCreditDialogOpen] = useState(false)
+
   // Receipt state
-  const [lastSale, setLastSale] = useState<any>(null)
+  const [lastSale, setLastSale] = useState<Sale | null>(null)
   const [showReceipt, setShowReceipt] = useState(false)
   const receiptRef = useRef<HTMLDivElement>(null)
   const searchInputRef = useRef<HTMLInputElement>(null)
@@ -101,7 +152,7 @@ export default function POSPage() {
   const [stockAlert, setStockAlert] = useState<{
     open: boolean
     message: string
-    product: any | null
+    product: Product | null
   }>({
     open: false,
     message: '',
@@ -160,7 +211,6 @@ export default function POSPage() {
 
   const loadProducts = async () => {
     if (!currentStore?._id) return
-    setIsLoading(true)
     try {
       const result = await window.api.products.getAll({
         storeId: currentStore._id,
@@ -173,8 +223,6 @@ export default function POSPage() {
       }
     } catch (error) {
       toast.error('Error loading products')
-    } finally {
-      setIsLoading(false)
     }
   }
 
@@ -184,13 +232,23 @@ export default function POSPage() {
     }
   }, [currentStore?._id])
 
+  useEffect(() => {
+    if (meterSheetOpen) {
+      setTimeout(() => meterInputRef.current?.focus(), 0)
+    }
+  }, [meterSheetOpen])
+
   const manualRefresh = async () => {
     await loadProducts()
     toast.success('Product prices refreshed')
   }
 
-  const filteredProducts = products.filter(
-    (p: any) =>
+  const sellableProducts = products.filter(
+    (p) => (p.productKind === 'SIMPLE' || p.productKind === 'RAW_MATERIAL') && p.isActive !== false
+  )
+
+  const filteredProducts = sellableProducts.filter(
+    (p) =>
       p.name?.toLowerCase().includes(search.toLowerCase()) ||
       p.sku?.toLowerCase().includes(search.toLowerCase()) ||
       p.barcode?.toLowerCase().includes(search.toLowerCase())
@@ -206,8 +264,8 @@ export default function POSPage() {
       e.preventDefault()
       if (search.trim()) {
         // Check for exact match first
-        const exactMatch = products.find(
-          (p: any) =>
+        const exactMatch = sellableProducts.find(
+          (p) =>
             p.sku?.toLowerCase() === search.toLowerCase() ||
             p.barcode?.toLowerCase() === search.toLowerCase()
         )
@@ -270,7 +328,79 @@ export default function POSPage() {
     setSelectedIndex(0)
   }
 
-  const addToCart = (product: any) => {
+  const openMetersSheet = (product: Product, isEdit = false) => {
+    setMeterProduct(product)
+    setMeterInput(isEdit ? String(product.quantity ?? '') : '')
+    setMeterSheetOpen(true)
+    setIsEditingMeters(isEdit)
+  }
+
+  const addRawMaterialToCart = (product: Product, meters: number) => {
+    const stock = product.stockLevel || 0
+    if (meters <= 0 || Number.isNaN(meters)) {
+      toast.error('Please enter a valid meters quantity')
+      return false
+    }
+    const existingItem = cart.find((item) => item._id === product._id)
+    const nextQuantity = existingItem ? existingItem.quantity + meters : meters
+
+    if (nextQuantity > stock) {
+      setStockAlert({
+        open: true,
+        message: 'You cannot add more of this item. Maximum stock level reached.',
+        product: product
+      })
+      return false
+    }
+
+    if (existingItem) {
+      setCart(
+        cart.map((item) => (item._id === product._id ? { ...item, quantity: nextQuantity } : item))
+      )
+      toast.success(`Added ${meters} meter(s) of ${product.name}`)
+    } else {
+      setCart([
+        ...cart,
+        {
+          ...product,
+          quantity: meters,
+          sellingPrice: product.sellingPrice || product.buyingPrice || 0
+        } as CartItem
+      ])
+      toast.success(`${product.name} added to cart`)
+    }
+
+    return true
+  }
+
+  const confirmMeters = () => {
+    if (!meterProduct) return
+    const meters = Number(meterInput)
+    const success = isEditingMeters
+      ? updateMetersDirect(meterProduct._id, meters)
+      : addRawMaterialToCart(meterProduct, meters)
+    if (success) {
+      setMeterSheetOpen(false)
+      setMeterProduct(null)
+      setMeterInput('')
+      setIsEditingMeters(false)
+    }
+  }
+
+  const addToCart = (product: Product) => {
+    if (product.productKind === 'RAW_MATERIAL') {
+      const stock = product.stockLevel || 0
+      if (stock <= 0) {
+        setStockAlert({
+          open: true,
+          message: 'This item is currently out of stock.',
+          product: product
+        })
+        return
+      }
+      openMetersSheet(product)
+      return
+    }
     const stock = product.stockLevel || 0
     if (stock <= 0) {
       setStockAlert({
@@ -281,7 +411,7 @@ export default function POSPage() {
       return
     }
 
-    const existingItem = cart.find((item: any) => item._id === product._id)
+    const existingItem = cart.find((item) => item._id === product._id)
     if (existingItem) {
       if (existingItem.quantity >= stock) {
         setStockAlert({
@@ -300,7 +430,11 @@ export default function POSPage() {
     } else {
       setCart([
         ...cart,
-        { ...product, quantity: 1, sellingPrice: product.sellingPrice || product.buyingPrice || 0 }
+        {
+          ...product,
+          quantity: 1,
+          sellingPrice: product.sellingPrice || product.buyingPrice || 0
+        } as CartItem
       ])
       toast.success(`${product.name} added to cart`)
     }
@@ -308,10 +442,11 @@ export default function POSPage() {
 
   const updateQuantity = (id: string, delta: number) => {
     setCart(
-      cart.map((item: any) => {
+      cart.map((item) => {
         if (item._id === id) {
+          if (item.productKind === 'RAW_MATERIAL') return item
           const newQty = item.quantity + delta
-          const product = products.find((p: any) => p._id === id)
+          const product = products.find((p) => p._id === id)
           if (!product) return item
 
           if (newQty > (product.stockLevel || 0)) {
@@ -330,37 +465,116 @@ export default function POSPage() {
   }
 
   const updatePrice = (id: string, newPrice: number) => {
-    setCart(cart.map((item: any) => (item._id === id ? { ...item, sellingPrice: newPrice } : item)))
+    setCart(cart.map((item) => (item._id === id ? { ...item, sellingPrice: newPrice } : item)))
   }
+
+  const updateMetersDirect = (id: string, meters: number) => {
+    if (Number.isNaN(meters) || meters <= 0) return false
+    const product = products.find((p) => p._id === id)
+    if (!product) return false
+    if (meters > (product.stockLevel || 0)) {
+      setStockAlert({
+        open: true,
+        message: 'Maximum available stock reached for this item.',
+        product: product
+      })
+      return false
+    }
+    setCart(cart.map((item) => (item._id === id ? { ...item, quantity: meters } : item)))
+    return true
+  }
+
+  const handleMeterKey = (value: string) => {
+    if (value === 'clear') {
+      setMeterInput('')
+      return
+    }
+    if (value === 'back') {
+      setMeterInput((prev) => prev.slice(0, -1))
+      return
+    }
+    if (value === '.') {
+      setMeterInput((prev) => (prev.includes('.') ? prev : prev + '.'))
+      return
+    }
+    setMeterInput((prev) => (prev === '0' ? value : prev + value))
+  }
+
+  const handleMeterSheetChange = (open: boolean) => {
+    setMeterSheetOpen(open)
+    if (!open) {
+      setMeterProduct(null)
+      setMeterInput('')
+      setIsEditingMeters(false)
+    }
+  }
+
+  const formatQuantity = (item: CartItem) =>
+    item.productKind === 'RAW_MATERIAL' ? item.quantity.toFixed(1) : item.quantity
+
+  const formatSaleQuantity = (quantity: number) =>
+    Number.isInteger(quantity) ? quantity : quantity.toFixed(1)
 
   const removeFromCart = (id: string) => {
     setCart(cart.filter((item) => item._id !== id))
   }
 
   const form = useForm<CheckoutFormValues>({
-    resolver: zodResolver(checkoutSchema),
+    resolver: zodResolver(checkoutSchema) as Resolver<CheckoutFormValues>,
     defaultValues: {
-      customerName: '',
-      customerPhone: '',
-      customerEmail: '',
+      customerId: '',
       discountPercent: 0,
       discountAmount: 0,
       taxAmount: 0,
-      paymentMethod: 'Cash'
+      paymentMethod: 'Cash',
+      creditPaidAmount: 0
     }
   })
 
   const formValues = useWatch({ control: form.control })
-  const { discountPercent, discountAmount, taxAmount } = formValues
+  const { discountPercent, discountAmount, taxAmount, paymentMethod } = formValues
 
   const subtotal = cart.reduce((sum, item) => sum + item.sellingPrice * item.quantity, 0)
   const effectiveDiscount =
     (discountAmount || 0) > 0 ? discountAmount || 0 : subtotal * ((discountPercent || 0) / 100)
   const total = subtotal - effectiveDiscount + (taxAmount || 0)
 
+  useEffect(() => {
+    if (paymentMethod === 'Credit') {
+      setCreditDialogOpen(true)
+    }
+  }, [paymentMethod])
+
+  const handleCreditSave = async () => {
+    const isValid = await form.trigger(['customerId', 'creditPaidAmount'])
+    if (!isValid) return
+
+    if (paymentMethod === 'Credit') {
+      if (!form.getValues('customerId')?.trim()) {
+        toast.error('Customer ID is required for credit sales.')
+        return
+      }
+    }
+
+    setCreditDialogOpen(false)
+  }
+
   const onSubmit = async (values: CheckoutFormValues) => {
     if (cart.length === 0) return
     if (!currentStore?._id) return
+
+    if (values.paymentMethod === 'Bank Transfer' && !values.paymentChannel) {
+      toast.error('Please select a bank transfer method.')
+      return
+    }
+
+    if (values.paymentMethod === 'Credit') {
+      if (!values.customerId?.trim()) {
+        toast.error('Customer ID is required for credit sales.')
+        setCreditDialogOpen(true)
+        return
+      }
+    }
 
     // Get user from local storage
     const userStr = localStorage.getItem('user')
@@ -397,16 +611,22 @@ export default function POSPage() {
         totalProfit -= effectiveDiscount
       }
 
-      const paidAmount = values.paymentMethod === 'Credit' ? 0 : total
-      const paymentStatus = values.paymentMethod === 'Credit' ? 'PENDING' : 'PAID'
+      const creditPaidAmount = Math.min(values.creditPaidAmount || 0, total)
+      const paidAmount = values.paymentMethod === 'Credit' ? creditPaidAmount : total
+      const paymentStatus =
+        values.paymentMethod === 'Credit'
+          ? paidAmount >= total
+            ? 'PAID'
+            : paidAmount > 0
+              ? 'PARTIAL'
+              : 'PENDING'
+          : 'PAID'
 
       const salePayload = {
         store: currentStore._id,
         soldBy: user.id || user._id,
         invoiceNumber: `INV-${Date.now()}`,
-        customerName: values.customerName || undefined,
-        customerPhone: values.customerPhone || undefined,
-        customerEmail: values.customerEmail || undefined,
+        customer: values.customerId || undefined,
         items: items,
         totalAmount: total,
         subtotal: subtotal,
@@ -415,6 +635,8 @@ export default function POSPage() {
         discountPercent: values.discountPercent,
         paidAmount: paidAmount,
         paymentMethod: values.paymentMethod,
+        paymentChannel:
+          values.paymentMethod === 'Bank Transfer' ? values.paymentChannel : undefined,
         paymentStatus: paymentStatus,
         profitAmount: totalProfit,
         saleDate: new Date()
@@ -426,13 +648,12 @@ export default function POSPage() {
         toast.success('Sale completed successfully!')
         setCart([])
         form.reset({
-          customerName: '',
-          customerPhone: '',
-          customerEmail: '',
+          customerId: '',
           discountPercent: 0,
           discountAmount: 0,
           taxAmount: 0,
-          paymentMethod: 'Cash'
+          paymentMethod: 'Cash',
+          creditPaidAmount: 0
         })
         setLastSale(salePayload)
         setShowReceipt(true)
@@ -694,23 +915,42 @@ export default function POSPage() {
                       </div>
 
                       <div className="col-span-2 flex justify-center">
-                        <div className="flex items-center bg-muted rounded-lg border border-border p-1">
-                          <button
-                            onClick={() => updateQuantity(item._id, -1)}
-                            className="h-8 w-8 rounded-md hover:bg-background flex items-center justify-center transition-colors text-[#4ade80]"
-                          >
-                            <Minus className="w-4 h-4" />
-                          </button>
-                          <span className="w-10 text-center text-sm font-black text-foreground">
-                            {item.quantity}
-                          </span>
-                          <button
-                            onClick={() => updateQuantity(item._id, 1)}
-                            className="h-8 w-8 rounded-md hover:bg-background flex items-center justify-center transition-colors text-[#4ade80]"
-                          >
-                            <Plus className="w-4 h-4" />
-                          </button>
-                        </div>
+                        {item.productKind === 'RAW_MATERIAL' ? (
+                          <div className="flex items-center gap-2 bg-muted rounded-lg border border-border px-3 py-2">
+                            <span className="text-sm font-black text-foreground">
+                              {formatQuantity(item)}
+                            </span>
+                            <span className="text-[10px] font-bold uppercase text-muted-foreground">
+                              m
+                            </span>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 text-[#4ade80] hover:bg-background"
+                              onClick={() => openMetersSheet(item, true)}
+                            >
+                              <Edit3 className="w-3.5 h-3.5" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center bg-muted rounded-lg border border-border p-1">
+                            <button
+                              onClick={() => updateQuantity(item._id, -1)}
+                              className="h-8 w-8 rounded-md hover:bg-background flex items-center justify-center transition-colors text-[#4ade80]"
+                            >
+                              <Minus className="w-4 h-4" />
+                            </button>
+                            <span className="w-10 text-center text-sm font-black text-foreground">
+                              {formatQuantity(item)}
+                            </span>
+                            <button
+                              onClick={() => updateQuantity(item._id, 1)}
+                              className="h-8 w-8 rounded-md hover:bg-background flex items-center justify-center transition-colors text-[#4ade80]"
+                            >
+                              <Plus className="w-4 h-4" />
+                            </button>
+                          </div>
+                        )}
                       </div>
 
                       <div className="col-span-2 text-right flex flex-col items-end gap-1">
@@ -745,7 +985,7 @@ export default function POSPage() {
             </CardTitle>
           </CardHeader>
 
-          <CardContent className="p-6 space-y-6">
+          <CardContent className="p-6 space-y-6 overflow-y-auto max-h-[calc(100vh-220px)]">
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                 {/* Checkout Totals */}
@@ -818,45 +1058,6 @@ export default function POSPage() {
                   </div>
                 </div>
 
-                {/* Customer Info */}
-                <div className="space-y-4">
-                  <h4 className="text-xs font-black text-muted-foreground uppercase tracking-widest border-l-4 border-[#4ade80] pl-3">
-                    Customer Information
-                  </h4>
-                  <div className="grid grid-cols-1 gap-3">
-                    <FormField
-                      control={form.control}
-                      name="customerName"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormControl>
-                            <Input
-                              placeholder="Customer Name"
-                              {...field}
-                              className="h-11 bg-muted/50 border-border font-bold"
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="customerPhone"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormControl>
-                            <Input
-                              placeholder="Phone Number"
-                              {...field}
-                              className="h-11 bg-muted/50 border-border font-bold"
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </div>
-
                 {/* Payment Method */}
                 <div className="space-y-4">
                   <h4 className="text-xs font-black text-muted-foreground uppercase tracking-widest border-l-4 border-[#4ade80] pl-3">
@@ -866,18 +1067,26 @@ export default function POSPage() {
                     control={form.control}
                     name="paymentMethod"
                     render={({ field }) => (
-                      <div className="grid grid-cols-2 gap-2">
-                        {['Cash', 'Card', 'Bank Transfer', 'Credit'].map((method) => (
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        {['Cash', 'Bank Transfer', 'Credit'].map((method) => (
                           <Button
                             key={method}
                             type="button"
                             variant="outline"
-                            className={`h-12 font-black border-2 transition-all duration-200 ${
+                            className={`h-12 px-3 text-xs sm:text-[11px] font-black leading-snug whitespace-normal border-2 transition-all duration-200 ${
                               field.value === method
                                 ? 'bg-[#4ade80] text-[#4ade80] border-[#4ade80] hover:bg-[#4ade80] hover:text-[#4ade80] hover:border-[#4ade80]'
                                 : 'bg-transparent text-foreground border-border hover:bg-muted'
                             }`}
-                            onClick={() => field.onChange(method)}
+                            onClick={() => {
+                              field.onChange(method)
+                              if (method !== 'Bank Transfer') {
+                                form.setValue('paymentChannel', undefined)
+                              }
+                              if (method === 'Credit') {
+                                setCreditDialogOpen(true)
+                              }
+                            }}
                           >
                             {method.toUpperCase()}
                           </Button>
@@ -886,6 +1095,48 @@ export default function POSPage() {
                     )}
                   />
                 </div>
+
+                {paymentMethod === 'Bank Transfer' && (
+                  <div className="space-y-4">
+                    <h4 className="text-xs font-black text-muted-foreground uppercase tracking-widest border-l-4 border-[#4ade80] pl-3">
+                      Bank Transfer Method
+                    </h4>
+                    <FormField
+                      control={form.control}
+                      name="paymentChannel"
+                      render={({ field }) => (
+                        <div className="grid grid-cols-2 gap-2">
+                          {bankTransferOptions.map((channel) => (
+                            <Button
+                              key={channel}
+                              type="button"
+                              variant="outline"
+                              className={`h-11 text-xs font-black uppercase border-2 transition-all ${
+                                field.value === channel
+                                  ? 'bg-[#4ade80] text-[#4ade80] border-[#4ade80] hover:bg-[#4ade80] hover:text-[#4ade80]'
+                                  : 'bg-transparent text-foreground border-border hover:bg-muted'
+                              }`}
+                              onClick={() => field.onChange(channel)}
+                            >
+                              {channel}
+                            </Button>
+                          ))}
+                        </div>
+                      )}
+                    />
+                  </div>
+                )}
+
+                {paymentMethod === 'Credit' && formValues.customerId && (
+                  <div className="space-y-2 rounded-xl border border-border bg-muted/20 p-4">
+                    <div className="text-xs font-black uppercase tracking-widest text-muted-foreground">
+                      Customer Summary
+                    </div>
+                    <div className="text-sm font-bold text-foreground">
+                      ID: {formValues.customerId}
+                    </div>
+                  </div>
+                )}
 
                 <LoadingButton
                   type="submit"
@@ -956,16 +1207,10 @@ export default function POSPage() {
                     : format(new Date(), 'MMM dd, yyyy HH:mm')}
                 </span>
               </div>
-              {lastSale?.customerName && (
+              {lastSale?.customer && (
                 <div className="flex justify-between items-center">
-                  <span className="text-sm font-bold">Customer:</span>
-                  <span>{lastSale.customerName}</span>
-                </div>
-              )}
-              {lastSale?.customerPhone && (
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-bold">Phone:</span>
-                  <span>{lastSale.customerPhone}</span>
+                  <span className="text-sm font-bold">Customer ID:</span>
+                  <span>{lastSale.customer}</span>
                 </div>
               )}
             </div>
@@ -982,14 +1227,16 @@ export default function POSPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {lastSale?.items?.map((item: any, index: number) => (
+                  {lastSale?.items?.map((item: SaleItem, index: number) => (
                     <TableRow key={index} className="border-b border-dashed">
                       <TableCell className="font-medium">
                         <div>
                           <div className="font-black">{item.productName}</div>
                         </div>
                       </TableCell>
-                      <TableCell className="text-center font-black">{item.quantity}</TableCell>
+                      <TableCell className="text-center font-black">
+                        {formatSaleQuantity(item.quantity)}
+                      </TableCell>
                       <TableCell className="text-right font-mono">
                         Rs. {item.sellingPrice.toLocaleString()}
                       </TableCell>
@@ -1008,13 +1255,13 @@ export default function POSPage() {
                 <span className="font-bold">Subtotal:</span>
                 <span className="font-mono">Rs. {lastSale?.subtotal?.toLocaleString() || '0'}</span>
               </div>
-              {lastSale?.taxAmount > 0 && (
+              {lastSale && lastSale.taxAmount > 0 && (
                 <div className="flex justify-between items-center">
                   <span className="font-bold">Tax:</span>
                   <span className="font-mono">Rs. {lastSale.taxAmount.toLocaleString()}</span>
                 </div>
               )}
-              {lastSale?.discountAmount > 0 && (
+              {lastSale && lastSale.discountAmount > 0 && (
                 <div className="flex justify-between items-center">
                   <span className="font-bold">Discount:</span>
                   <span className="font-mono text-red-500">
@@ -1034,6 +1281,12 @@ export default function POSPage() {
                 <span className="font-bold">Payment Method:</span>
                 <span className="font-black uppercase">{lastSale?.paymentMethod || 'Cash'}</span>
               </div>
+              {lastSale?.paymentChannel && (
+                <div className="flex justify-between items-center">
+                  <span className="font-bold">Transfer Method:</span>
+                  <span className="font-black uppercase">{lastSale.paymentChannel}</span>
+                </div>
+              )}
               <div className="flex justify-between items-center">
                 <span className="font-bold">Status:</span>
                 <span
@@ -1065,6 +1318,124 @@ export default function POSPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={creditDialogOpen} onOpenChange={setCreditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Credit Customer Details</DialogTitle>
+            <DialogDescription>Capture customer information for credit sales.</DialogDescription>
+          </DialogHeader>
+          <Form {...form}>
+            <div className="space-y-3">
+              <FormField
+                control={form.control}
+                name="customerId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <Input
+                        placeholder="Customer ID"
+                        {...field}
+                        className="h-11 bg-muted/50 border-border font-bold"
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="creditPaidAmount"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        value={field.value === 0 ? '' : field.value}
+                        onChange={(e) =>
+                          field.onChange(e.target.value === '' ? 0 : Number(e.target.value))
+                        }
+                        placeholder="Paid now (optional)"
+                        className="h-11 bg-muted/50 border-border font-bold"
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            </div>
+            <div className="flex justify-end gap-2 pt-4">
+              <Button variant="outline" onClick={() => setCreditDialogOpen(false)} type="button">
+                Close
+              </Button>
+              <Button
+                className="bg-[#4ade80] text-black hover:bg-[#22c55e]"
+                onClick={handleCreditSave}
+                type="button"
+              >
+                Save
+              </Button>
+            </div>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      <Sheet open={meterSheetOpen} onOpenChange={handleMeterSheetChange}>
+        <SheetContent side="left" className="w-full max-w-sm">
+          <SheetHeader>
+            <SheetTitle>{isEditingMeters ? 'Update Meters' : 'Enter Meters'}</SheetTitle>
+            <SheetDescription>
+              Add meters for {meterProduct?.name || 'this product'}
+            </SheetDescription>
+          </SheetHeader>
+          <div className="py-6 space-y-4">
+            <div className="space-y-2">
+              <label className="text-xs font-bold uppercase text-muted-foreground">Meters</label>
+              <Input
+                type="number"
+                min="0.1"
+                step="0.1"
+                value={meterInput}
+                onChange={(e) => setMeterInput(e.target.value)}
+                placeholder="e.g. 3.5"
+                className="h-12 text-lg font-black"
+                ref={meterInputRef}
+              />
+            </div>
+            <div className="text-xs text-muted-foreground">
+              Available stock:{' '}
+              {meterProduct?.stockLevel?.toFixed?.(1) || meterProduct?.stockLevel || 0} m
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              {['7', '8', '9', '4', '5', '6', '1', '2', '3', '.', '0', 'back'].map((key) => (
+                <Button
+                  key={key}
+                  type="button"
+                  variant="outline"
+                  className="h-12 font-black text-lg"
+                  onClick={() => handleMeterKey(key)}
+                >
+                  {key === 'back' ? 'DEL' : key}
+                </Button>
+              ))}
+              <Button
+                type="button"
+                variant="outline"
+                className="col-span-3 h-12 font-black text-sm"
+                onClick={() => handleMeterKey('clear')}
+              >
+                CLEAR
+              </Button>
+            </div>
+          </div>
+          <SheetFooter>
+            <Button variant="outline" onClick={() => setMeterSheetOpen(false)}>
+              Cancel
+            </Button>
+            <Button className="bg-[#4ade80] text-black hover:bg-[#22c55e]" onClick={confirmMeters}>
+              {isEditingMeters ? 'Update Meters' : 'Add to Cart'}
+            </Button>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
     </div>
   )
 }

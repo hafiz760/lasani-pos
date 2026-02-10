@@ -19,8 +19,24 @@ export interface IPaymentRecord {
   recordedBy: mongoose.Types.ObjectId
 }
 
+export interface IRefundItem {
+  product: mongoose.Types.ObjectId
+  quantity: number
+  amount: number
+}
+
+export interface IRefundRecord {
+  date: Date
+  amount: number
+  method: string
+  reason?: string
+  processedBy: mongoose.Types.ObjectId
+  items: IRefundItem[]
+}
+
 export interface ISale extends Document {
   invoiceNumber: string
+  customer?: mongoose.Types.ObjectId
   customerName?: string
   customerPhone?: string
   customerEmail?: string
@@ -34,7 +50,10 @@ export interface ISale extends Document {
   paidAmount: number
   paymentStatus: 'PAID' | 'PENDING' | 'PARTIAL'
   paymentMethod: string
+  paymentChannel?: string
   profitAmount: number
+  refundedAmount?: number
+  refundHistory?: IRefundRecord[]
   notes?: string
   soldBy: mongoose.Types.ObjectId
   store: mongoose.Types.ObjectId
@@ -94,6 +113,10 @@ const SaleSchema = new Schema<ISale>(
       required: true,
       unique: true
     },
+    customer: {
+      type: Schema.Types.ObjectId,
+      ref: 'Customer'
+    },
     customerName: {
       type: String
     },
@@ -150,10 +173,62 @@ const SaleSchema = new Schema<ISale>(
       required: true,
       enum: ['Cash', 'Card', 'Bank Transfer', 'Installment', 'Credit']
     },
+    paymentChannel: {
+      type: String
+    },
     profitAmount: {
       type: Number,
       required: true
     },
+    refundedAmount: {
+      type: Number,
+      default: 0
+    },
+    refundHistory: [
+      {
+        date: {
+          type: Date,
+          required: true,
+          default: Date.now
+        },
+        amount: {
+          type: Number,
+          required: true,
+          min: 0
+        },
+        method: {
+          type: String,
+          required: true
+        },
+        reason: {
+          type: String
+        },
+        processedBy: {
+          type: Schema.Types.ObjectId,
+          ref: 'User',
+          required: true
+        },
+        items: [
+          {
+            product: {
+              type: Schema.Types.ObjectId,
+              ref: 'Product',
+              required: true
+            },
+            quantity: {
+              type: Number,
+              required: true,
+              min: 0
+            },
+            amount: {
+              type: Number,
+              required: true,
+              min: 0
+            }
+          }
+        ]
+      }
+    ],
     notes: {
       type: String
     },
@@ -204,6 +279,7 @@ const SaleSchema = new Schema<ISale>(
 SaleSchema.index({ saleDate: -1 })
 SaleSchema.index({ soldBy: 1 })
 SaleSchema.index({ paymentStatus: 1 })
+SaleSchema.index({ customer: 1 })
 
 const SaleModel = mongoose.models.Sale || mongoose.model<ISale>('Sale', SaleSchema)
 

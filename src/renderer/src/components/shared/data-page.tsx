@@ -39,6 +39,7 @@ interface DataPageProps {
   onPageSizeChange?: (pageSize: number) => void
   onSearchChange?: (search: string) => void
   searchTerm?: string
+  extraActions?: React.ReactNode
 }
 
 export function DataPage({
@@ -58,7 +59,8 @@ export function DataPage({
   onPageChange,
   onPageSizeChange,
   onSearchChange,
-  searchTerm: externalSearchTerm
+  searchTerm: externalSearchTerm,
+  extraActions
 }: DataPageProps) {
   const [internalSearchTerm, setInternalSearchTerm] = useState('')
 
@@ -103,20 +105,23 @@ export function DataPage({
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-3xl font-bold tracking-tight text-foreground">{title}</h2>
           <p className="text-muted-foreground">{description}</p>
         </div>
-        {onAdd && (
-          <Button
-            onClick={onAdd}
-            className="bg-[#4ade80] hover:bg-[#22c55e] text-black font-semibold"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            {addLabel}
-          </Button>
-        )}
+        <div className="flex flex-wrap items-center gap-2">
+          {extraActions}
+          {onAdd && (
+            <Button
+              onClick={onAdd}
+              className="bg-[#4ade80] hover:bg-[#22c55e] text-black font-semibold"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              {addLabel}
+            </Button>
+          )}
+        </div>
       </div>
 
       <Card className="bg-card border-border text-foreground">

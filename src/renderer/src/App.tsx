@@ -30,11 +30,15 @@ import StoreDashboard from '@renderer/pages/store/dashboard/page'
 import StoreSelectionPage from './pages/auth/StoreSelectionPage'
 import ReportsPage from './pages/store/reports/page'
 import SalesReportsPage from './pages/store/reports/sales/page'
+import SalesReportPage from './pages/store/sales/page'
+import SalesDetailPage from './pages/store/reports/sales/detail'
 import AccountingPage from './pages/store/accounting/page'
 import AccountsPage from './pages/store/accounting/accounts/page'
 import ExpensesPage from './pages/store/accounting/expenses/page'
+import TransactionsPage from './pages/store/accounting/transactions/page'
 import EditSimpleProduct from '@renderer/pages/store/inventory/products/EditSimpleProduct'
 import EditRawMaterialProduct from '@renderer/pages/store/inventory/products/EditRawMaterialProduct'
+import CustomersPage from '@renderer/pages/store/customers/page'
 
 interface User {
   id: string
@@ -159,6 +163,7 @@ function App(): React.JSX.Element {
             <Route path="inventory/attributes" element={<AttributesPage />} />
             <Route path="purchases/suppliers" element={<SuppliersPage />} />
             <Route path="purchases/suppliers/:id" element={<SupplierDetails />} />
+            <Route path="customers" element={<CustomersPage />} />
             <Route path="purchases/orders" element={<PurchaseOrdersPage />} />
             <Route path="purchases/orders/create" element={<CreatePurchaseOrder />} />
             <Route path="purchases/orders/:id/edit" element={<EditPurchaseOrder />} />
@@ -167,9 +172,12 @@ function App(): React.JSX.Element {
             <Route path="settings/profile" element={<SettingsProfilePage />} />
             <Route path="reports" element={<ReportsPage />} />
             <Route path="reports/sales" element={<SalesReportsPage />} />
+            <Route path="reports/sales/:id" element={<SalesDetailPage />} />
+            <Route path="reports/sales-report" element={<SalesReportPage />} />
             <Route path="accounting" element={<AccountingPage />} />
             <Route path="accounting/accounts" element={<AccountsPage />} />
             <Route path="accounting/expenses" element={<ExpensesPage />} />
+            <Route path="accounting/transactions" element={<TransactionsPage />} />
           </Route>
 
           <Route

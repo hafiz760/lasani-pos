@@ -34,6 +34,7 @@ import { StoreSwitcher } from '@renderer/components/shared/store-switcher'
 const storeMenuItems = [
   { icon: LayoutDashboard, label: 'Dashboard', href: '/dashboard' },
   { icon: ShoppingCart, label: 'POS', href: '/dashboard/pos' },
+  { icon: Users, label: 'Customers', href: '/dashboard/customers' },
   {
     icon: Package,
     label: 'Inventory',
@@ -53,7 +54,8 @@ const storeMenuItems = [
     href: '/dashboard/accounting/accounts',
     submenu: [
       { label: 'Chart of Accounts', href: '/dashboard/accounting/accounts' },
-      { label: 'Expenses', href: '/dashboard/accounting/expenses' }
+      { label: 'Expenses', href: '/dashboard/accounting/expenses' },
+      { label: 'Transactions', href: '/dashboard/accounting/transactions' }
     ]
   },
   { icon: BarChart3, label: 'Reports', href: '/dashboard/reports/sales' },

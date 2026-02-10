@@ -172,6 +172,7 @@ export default function SimpleDashboard({ stats }: SimpleDashboardProps) {
                   <p className="text-sm font-medium">Sale #{sale.invoiceNo || i + 1}</p>
                   <p className="text-xs text-muted-foreground">
                     {format(new Date(sale.createdAt), 'hh:mm a')} • {sale.paymentMethod}
+                    {sale.paymentChannel ? ` • ${sale.paymentChannel}` : ''}
                   </p>
                 </div>
                 <div className="text-right">

@@ -42,12 +42,16 @@ declare global {
         delete: (id: string) => Promise<any>
         getById: (id: string) => Promise<any>
       }
+      customers: {
+        getAll: (params?: any) => Promise<any>
+        create: (data: any) => Promise<any>
+        update: (id: string, data: any) => Promise<any>
+        delete: (id: string) => Promise<any>
+        getById: (id: string) => Promise<any>
+        recordPayment: (customerId: string, paymentData: any) => Promise<any>
+      }
       inventory: {
-        getHistory: (params: {
-          productId: string
-          storeId: string
-          limit?: number
-        }) => Promise<any>
+        getHistory: (params: { productId: string; storeId: string; limit?: number }) => Promise<any>
       }
       purchaseOrders: {
         getAll: (params?: any) => Promise<any>
@@ -85,6 +89,9 @@ declare global {
       expenses: {
         getAll: (params?: any) => Promise<any>
         create: (data: any) => Promise<any>
+      }
+      transactions: {
+        getAll: (params?: any) => Promise<any>
       }
       stores: {
         getAll: (params?: any) => Promise<any>
@@ -127,6 +134,21 @@ declare global {
         delete: (id: string) => Promise<any>
         recordPayment: (saleId: string, paymentData: any) => Promise<any>
         getPendingStats: (storeId: string) => Promise<any>
+        getReport: (params: {
+          storeId: string
+          startDate: string
+          endDate: string
+          groupBy?: 'day' | 'week' | 'month'
+        }) => Promise<any>
+        refund: (
+          saleId: string,
+          payload: {
+            refundItems: Array<{ product: string; quantity: number }>
+            method: string
+            reason?: string
+            processedBy: string
+          }
+        ) => Promise<any>
       }
       dashboard: {
         getStats: (storeId: string) => Promise<any>

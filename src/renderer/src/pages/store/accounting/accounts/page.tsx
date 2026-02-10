@@ -31,8 +31,9 @@ import { Button } from '@renderer/components/ui/button'
 import { toast } from 'sonner'
 import { DeleteConfirm } from '@renderer/components/shared/delete-confirm'
 import { z } from 'zod'
-import { useForm, SubmitHandler } from 'react-hook-form'
+import { useForm, SubmitHandler, type Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { useNavigate } from 'react-router-dom'
 import {
   Form,
   FormControl,
@@ -50,14 +51,21 @@ const accountSchema = z.object({
   currentBalance: z.number()
 })
 
+const setupSchema = z.object({
+  cashOpeningBalance: z.coerce.number().min(0, 'Opening balance must be 0 or more'),
+  bankOpeningBalance: z.coerce.number().min(0, 'Opening balance must be 0 or more')
+})
+
 type AccountFormValues = z.infer<typeof accountSchema>
+type SetupFormValues = z.infer<typeof setupSchema>
 
 export default function AccountsPage() {
+  const navigate = useNavigate()
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
   const [searchTerm, setSearchTerm] = useState('')
-  const [isAddOpen, setIsAddOpen] = useState(false)
   const [isEditOpen, setIsEditOpen] = useState(false)
+  const [isSetupOpen, setIsSetupOpen] = useState(false)
   const [selectedAccount, setSelectedAccount] = useState<any>(null)
   const [deleteId, setDeleteId] = useState<string | null>(null)
 
@@ -120,20 +128,21 @@ export default function AccountsPage() {
     }
   })
 
+  const setupForm = useForm<SetupFormValues>({
+    resolver: zodResolver(setupSchema) as Resolver<SetupFormValues>,
+    defaultValues: {
+      cashOpeningBalance: 0,
+      bankOpeningBalance: 0
+    }
+  })
+
   const onSubmit: SubmitHandler<AccountFormValues> = async (values) => {
     setIsSaving(true)
     try {
-      const selectedStoreStr = localStorage.getItem('selectedStore')
-      if (!selectedStoreStr) return
-      const store = JSON.parse(selectedStoreStr)
-
-      const result = isEditOpen
-        ? await window.api.accounts.update(selectedAccount._id, values)
-        : await window.api.accounts.create({ ...values, store: store._id || store.id })
+      const result = await window.api.accounts.update(selectedAccount._id, values)
 
       if (result.success) {
-        toast.success(isEditOpen ? 'Account updated successfully' : 'Account created successfully')
-        setIsAddOpen(false)
+        toast.success('Account updated successfully')
         setIsEditOpen(false)
         form.reset()
         loadAccounts()
@@ -176,6 +185,54 @@ export default function AccountsPage() {
       currentBalance: account.currentBalance
     })
     setIsEditOpen(true)
+  }
+
+  const handleSetupAccounts: SubmitHandler<SetupFormValues> = async (values) => {
+    setIsSaving(true)
+    try {
+      const selectedStoreStr = localStorage.getItem('selectedStore')
+      if (!selectedStoreStr) return
+      const store = JSON.parse(selectedStoreStr)
+      const storeId = store._id || store.id
+
+      const existing = await window.api.accounts.getAll({ storeId, pageSize: 5 })
+      if (existing.success && existing.data.length > 0) {
+        toast.error('Accounts already exist for this store.')
+        setIsSaving(false)
+        setIsSetupOpen(false)
+        return
+      }
+
+      const [cashResult, bankResult] = await Promise.all([
+        window.api.accounts.create({
+          store: storeId,
+          accountCode: '1001',
+          accountName: 'Cash in Hand',
+          accountType: 'ASSET',
+          currentBalance: values.cashOpeningBalance
+        }),
+        window.api.accounts.create({
+          store: storeId,
+          accountCode: '1002',
+          accountName: 'Bank',
+          accountType: 'ASSET',
+          currentBalance: values.bankOpeningBalance
+        })
+      ])
+
+      if (cashResult.success && bankResult.success) {
+        toast.success('Default accounts created successfully')
+        setIsSetupOpen(false)
+        setupForm.reset()
+        loadAccounts()
+      } else {
+        toast.error('Failed to create default accounts')
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to create default accounts')
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   const columns = [
@@ -262,6 +319,15 @@ export default function AccountsPage() {
 
   return (
     <div className="space-y-6">
+      <div className="flex justify-end">
+        <Button
+          variant="outline"
+          className="border-border"
+          onClick={() => navigate('/dashboard/accounting/transactions')}
+        >
+          View History
+        </Button>
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="bg-card border-border">
           <CardContent className="p-6 flex items-center gap-4">
@@ -304,6 +370,25 @@ export default function AccountsPage() {
         </Card>
       </div>
 
+      {accounts.length === 0 && !isLoading && (
+        <Card className="border-border">
+          <CardContent className="p-6 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div>
+              <h3 className="text-lg font-semibold">Setup Chart of Accounts</h3>
+              <p className="text-sm text-muted-foreground">
+                Create Cash in Hand and Bank accounts with opening balances.
+              </p>
+            </div>
+            <Button
+              className="bg-[#4ade80] text-black hover:bg-[#22c55e] font-semibold"
+              onClick={() => setIsSetupOpen(true)}
+            >
+              Setup Accounts
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
       <DataPage
         title="Chart of Accounts"
         description="Monitor your financial accounts and their current balances in real-time."
@@ -311,8 +396,6 @@ export default function AccountsPage() {
         columns={columns}
         searchPlaceholder="Search account name or code..."
         fileName="chart_of_accounts_export"
-        addLabel="Add Account"
-        onAdd={() => setIsAddOpen(true)}
         isLoading={isLoading}
         currentPage={page}
         totalPages={totalPages}
@@ -339,18 +422,17 @@ export default function AccountsPage() {
       />
 
       <Dialog
-        open={isAddOpen || isEditOpen}
+        open={isEditOpen}
         onOpenChange={(open) => {
           if (!open) {
             form.reset()
-            setIsAddOpen(false)
             setIsEditOpen(false)
           }
         }}
       >
         <DialogContent className="bg-background border-border text-foreground">
           <DialogHeader>
-            <DialogTitle>{isEditOpen ? 'Edit Account' : 'Add New Account'}</DialogTitle>
+            <DialogTitle>Edit Account</DialogTitle>
           </DialogHeader>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
@@ -467,7 +549,6 @@ export default function AccountsPage() {
                   variant="outline"
                   onClick={() => {
                     form.reset()
-                    setIsAddOpen(false)
                     setIsEditOpen(false)
                   }}
                   className="border-border"
@@ -477,10 +558,78 @@ export default function AccountsPage() {
                 <LoadingButton
                   type="submit"
                   isLoading={isSaving}
-                  loadingText={isEditOpen ? 'Updating...' : 'Creating...'}
+                  loadingText="Updating..."
                   className="bg-[#4ade80] hover:bg-[#22c55e] text-black font-semibold"
                 >
-                  {isEditOpen ? 'Update Account' : 'Create Account'}
+                  Update Account
+                </LoadingButton>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isSetupOpen} onOpenChange={setIsSetupOpen}>
+        <DialogContent className="bg-background border-border text-foreground">
+          <DialogHeader>
+            <DialogTitle>Setup Default Accounts</DialogTitle>
+          </DialogHeader>
+          <Form {...setupForm}>
+            <form onSubmit={setupForm.handleSubmit(handleSetupAccounts)} className="space-y-4 py-4">
+              <FormField
+                control={setupForm.control}
+                name="cashOpeningBalance"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Cash in Hand Opening Balance</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        {...field}
+                        onChange={(e) => field.onChange(Number(e.target.value))}
+                        className="bg-muted border-border"
+                        placeholder="0"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={setupForm.control}
+                name="bankOpeningBalance"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Bank Opening Balance</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        {...field}
+                        onChange={(e) => field.onChange(Number(e.target.value))}
+                        className="bg-muted border-border"
+                        placeholder="0"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsSetupOpen(false)}
+                  className="border-border"
+                >
+                  Cancel
+                </Button>
+                <LoadingButton
+                  type="submit"
+                  isLoading={isSaving}
+                  loadingText="Setting up..."
+                  className="bg-[#4ade80] hover:bg-[#22c55e] text-black font-semibold"
+                >
+                  Create Accounts
                 </LoadingButton>
               </DialogFooter>
             </form>

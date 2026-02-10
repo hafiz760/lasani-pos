@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { DataPage } from '@renderer/components/shared/data-page'
 import { Badge } from '@renderer/components/ui/badge'
 import { Button } from '@renderer/components/ui/button'
-import { MoreVertical, Edit, Eye, Package as PackageIcon, PackagePlus } from 'lucide-react'
+import { MoreVertical, Edit, Eye, Package as PackageIcon, PackagePlus, Trash2 } from 'lucide-react'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -42,6 +42,7 @@ export default function ProductsPage() {
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
   const [searchTerm, setSearchTerm] = useState('')
+  const [showArchived, setShowArchived] = useState(false)
   const navigate = useNavigate()
   const [deleteId, setDeleteId] = useState<string | null>(null)
 
@@ -113,7 +114,8 @@ export default function ProductsPage() {
         storeId: currentStore._id,
         page,
         pageSize,
-        search: searchTerm
+        search: searchTerm,
+        includeInactive: showArchived
       })
       console.log(result)
       if (result.success) {
@@ -132,7 +134,7 @@ export default function ProductsPage() {
 
   useEffect(() => {
     loadProducts()
-  }, [currentStore?._id, page, pageSize, searchTerm])
+  }, [currentStore?._id, page, pageSize, searchTerm, showArchived])
 
   const handleDelete = async () => {
     if (!deleteId) return
@@ -140,7 +142,9 @@ export default function ProductsPage() {
     try {
       const result = await window.api.products.delete(deleteId)
       if (result.success) {
-        toast.success('Product deleted successfully')
+        toast.success(
+          result.archived ? 'Product archived successfully' : 'Product deleted successfully'
+        )
         setDeleteId(null)
         loadProducts()
       } else {
@@ -198,6 +202,11 @@ export default function ProductsPage() {
               {item.productKind === 'RAW_MATERIAL' && (
                 <span className="text-[9px] bg-amber-500/10 text-amber-600 px-1.5 py-0.5 rounded">
                   📏 FABRIC
+                </span>
+              )}
+              {!item.isActive && (
+                <span className="text-[9px] bg-slate-500/10 text-slate-500 px-1.5 py-0.5 rounded">
+                  ARCHIVED
                 </span>
               )}
               {item.productKind === 'COMBO_SET' && (
@@ -318,6 +327,13 @@ export default function ProductsPage() {
               <PackagePlus className="w-4 h-4 mr-2" />
               Quick Restock
             </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => setDeleteId(item._id)}
+              className="focus:bg-red-500 focus:text-white cursor-pointer text-red-500"
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              Delete / Archive
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       )
@@ -359,6 +375,18 @@ export default function ProductsPage() {
           setSearchTerm(term)
           setPage(1)
         }}
+        extraActions={
+          <Button
+            variant="outline"
+            className="border-border"
+            onClick={() => {
+              setShowArchived((prev) => !prev)
+              setPage(1)
+            }}
+          >
+            {showArchived ? 'Hide Archived' : 'Show Archived'}
+          </Button>
+        }
       />
 
       <DeleteConfirm
@@ -366,7 +394,7 @@ export default function ProductsPage() {
         onOpenChange={(open) => !open && setDeleteId(null)}
         onConfirm={handleDelete}
         isDeleting={isDeleting}
-        description="This will permanently delete this product and remove it from your inventory."
+        description="Products with sales will be archived instead of deleted."
       />
 
       <RestockModal

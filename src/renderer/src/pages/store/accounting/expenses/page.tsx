@@ -33,18 +33,21 @@ import {
   FormLabel,
   FormMessage
 } from '@renderer/components/ui/form'
+import { useNavigate } from 'react-router-dom'
 
 const expenseSchema = z.object({
   description: z.string().min(2, 'Description must be at least 2 characters'),
   amount: z.coerce.number().min(1, 'Amount must be greater than 0'),
   category: z.string().min(1, 'Category is required'),
   account: z.string().min(1, 'Payment account is required'),
+  transactionType: z.enum(['DEBIT', 'CREDIT']),
   expenseDate: z.string().min(1, 'Date is required')
 })
 
 type ExpenseFormValues = z.infer<typeof expenseSchema>
 
 export default function ExpensesPage() {
+  const navigate = useNavigate()
   const [expenses, setExpenses] = useState<any[]>([])
   const [accounts, setAccounts] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -63,6 +66,7 @@ export default function ExpensesPage() {
       amount: 0,
       category: 'Other',
       account: '',
+      transactionType: 'CREDIT',
       expenseDate: new Date().toISOString().split('T')[0]
     }
   })
@@ -162,16 +166,43 @@ export default function ExpensesPage() {
       render: (item: any) => item.account?.accountName || 'N/A'
     },
     {
+      header: 'Type',
+      accessor: 'transactionType',
+      render: (item: any) => (
+        <Badge
+          variant="outline"
+          className="border-border text-muted-foreground uppercase text-[10px]"
+        >
+          {item.transactionType || 'CREDIT'}
+        </Badge>
+      )
+    },
+    {
       header: 'Amount',
       accessor: 'amount',
       render: (item: any) => (
-        <span className="text-red-400 font-bold">-Rs. {item.amount?.toLocaleString()}</span>
+        <span
+          className={`font-bold ${
+            item.transactionType === 'DEBIT' ? 'text-emerald-500' : 'text-red-400'
+          }`}
+        >
+          {item.transactionType === 'DEBIT' ? '' : '-'}Rs. {item.amount?.toLocaleString()}
+        </span>
       )
     }
   ]
 
   return (
     <>
+      <div className="flex justify-end mb-4">
+        <Button
+          variant="outline"
+          className="border-border"
+          onClick={() => navigate('/dashboard/accounting/transactions')}
+        >
+          View History
+        </Button>
+      </div>
       <DataPage
         title="Expenses"
         description="Track your business expenditures and categorize costs."
@@ -307,6 +338,27 @@ export default function ExpensesPage() {
                               {acc.accountName} (Rs. {acc.currentBalance.toLocaleString()})
                             </SelectItem>
                           ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="transactionType"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Transaction Type</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger className="bg-muted border-border">
+                            <SelectValue placeholder="Select Type" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent className="bg-popover border-border text-popover-foreground">
+                          <SelectItem value="CREDIT">Credit</SelectItem>
+                          <SelectItem value="DEBIT">Debit</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />

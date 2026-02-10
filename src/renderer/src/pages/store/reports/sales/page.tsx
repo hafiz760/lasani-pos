@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { DataPage } from '@renderer/components/shared/data-page'
 import { Badge } from '@renderer/components/ui/badge'
 import { format } from 'date-fns'
-import { Eye, Trash2, Printer, MoreVertical } from 'lucide-react'
+import { Eye, Trash2, MoreVertical, FileText } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -21,7 +21,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger
 } from '@renderer/components/ui/dropdown-menu'
-import { printContent } from '@renderer/lib/print-utils'
 import {
   Select,
   SelectContent,
@@ -32,16 +31,16 @@ import {
 import { Input } from '@renderer/components/ui/input'
 import { Label } from '@renderer/components/ui/label'
 import { Wallet } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 
 const PAYMENT_METHODS = ['Cash', 'Card', 'Bank Transfer']
 
 export default function SalesReportsPage() {
+  const navigate = useNavigate()
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedSale, setSelectedSale] = useState<any>(null)
-  console.log(selectedSale)
-  const [isDetailsOpen, setIsDetailsOpen] = useState(false)
   const [isDeleteOpen, setIsDeleteOpen] = useState(false)
   const [isPaymentOpen, setIsPaymentOpen] = useState(false)
   const [statusFilter, setStatusFilter] = useState('All')
@@ -133,9 +132,6 @@ export default function SalesReportsPage() {
         setPaymentAmount('')
         setPaymentNotes('')
         loadSales()
-        if (isDetailsOpen) {
-          if (selectedSale._id === result.data._id) setSelectedSale(result.data)
-        }
       } else {
         toast.error(result.error || 'Failed to record payment')
       }
@@ -242,8 +238,7 @@ export default function SalesReportsPage() {
             )}
             <DropdownMenuItem
               onClick={() => {
-                setSelectedSale(item)
-                setIsDetailsOpen(true)
+                navigate(`/dashboard/reports/sales/${item._id}`)
               }}
               className="focus:bg-[#4ade80] focus:text-black cursor-pointer"
             >
@@ -268,7 +263,16 @@ export default function SalesReportsPage() {
 
   return (
     <>
-      <div className="flex justify-end mb-4 px-1">
+      <div className="flex flex-col gap-3 mb-4 px-1 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-2">
+          <Button
+            className="bg-[#4ade80] text-black hover:bg-[#22c55e] font-semibold"
+            onClick={() => navigate('/dashboard/reports/sales-report')}
+          >
+            <FileText className="w-4 h-4 mr-2" />
+            Generate Report
+          </Button>
+        </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-[180px] bg-background border-border">
             <SelectValue placeholder="Filter Status" />
@@ -305,206 +309,6 @@ export default function SalesReportsPage() {
           setPage(1)
         }}
       />
-
-      {/* Sale Details Dialog */}
-      <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
-        <DialogContent className="bg-background border-border text-foreground sm:max-w-xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center justify-between pr-6">
-              <span>
-                Sale Details: #{selectedSale?.invoiceNumber || selectedSale?._id?.substring(0, 8)}
-              </span>
-              <Badge className="bg-[#4ade80] text-black uppercase">
-                {selectedSale?.paymentStatus}
-              </Badge>
-            </DialogTitle>
-          </DialogHeader>
-
-          {selectedSale && (
-            <div className="space-y-6 py-4">
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <p className="text-muted-foreground text-xs uppercase font-semibold">Date</p>
-                  <p className="font-semibold">
-                    {format(new Date(selectedSale.createdAt), 'MMMM dd, yyyy HH:mm')}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground text-xs uppercase font-semibold">Seller</p>
-                  <p className="font-semibold">{selectedSale.soldBy?.fullName || 'Admin'}</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground text-xs uppercase font-semibold">Customer</p>
-                  <p className="font-semibold">{selectedSale.customerName || 'Walk-in Customer'}</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground text-xs uppercase font-semibold">
-                    Payment Method
-                  </p>
-                  <p className="font-semibold">{selectedSale.paymentMethod}</p>
-                </div>
-              </div>
-
-              <div className="border border-border rounded-lg overflow-hidden">
-                <table className="w-full text-sm">
-                  <thead className="bg-muted text-muted-foreground">
-                    <tr>
-                      <th className="px-4 py-2 text-left">Product</th>
-                      <th className="px-4 py-2 text-center">Qty</th>
-                      <th className="px-4 py-2 text-right">Price</th>
-                      <th className="px-4 py-2 text-right">Total</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border">
-                    {selectedSale.items?.map((item: any, idx: number) => (
-                      <tr key={idx} className="hover:bg-accent/50 transition-colors">
-                        <td className="px-4 py-2">{item.productName || item.product?.name}</td>
-                        <td className="px-4 py-2 text-center">{item.quantity}</td>
-                        <td className="px-4 py-2 text-right font-mono">
-                          Rs. {(item.sellingPrice || item.price).toLocaleString()}
-                        </td>
-                        <td className="px-4 py-2 text-right font-bold font-mono">
-                          Rs. {item.totalAmount.toLocaleString()}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              <div className="space-y-2 text-right text-sm border-t border-border pt-4">
-                <div className="flex justify-between px-4">
-                  <span className="text-muted-foreground">Subtotal:</span>
-                  <span className="font-mono">
-                    Rs.{' '}
-                    {selectedSale.subtotal?.toLocaleString() ||
-                      selectedSale.totalAmount?.toLocaleString()}
-                  </span>
-                </div>
-                <div className="flex justify-between px-4">
-                  <span className="text-muted-foreground">Tax:</span>
-                  <span className="font-mono">
-                    Rs. {selectedSale.taxAmount?.toLocaleString() || 0}
-                  </span>
-                </div>
-                {selectedSale.discountAmount > 0 && (
-                  <div className="flex justify-between px-4 text-red-500">
-                    <span>Discount:</span>
-                    <span className="font-mono">
-                      -Rs. {selectedSale.discountAmount.toLocaleString()}
-                    </span>
-                  </div>
-                )}
-                <div className="flex justify-between px-4 text-lg font-bold border-t border-border pt-2 mt-2">
-                  <span className="text-foreground">Total:</span>
-                  <span className="text-[#4ade80] font-mono">
-                    Rs. {selectedSale.totalAmount.toLocaleString()}
-                  </span>
-                </div>
-              </div>
-            </div>
-          )}
-
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button
-              variant="outline"
-              onClick={() => setIsDetailsOpen(false)}
-              className="border-border text-foreground hover:bg-accent"
-            >
-              Close
-            </Button>
-            <Button
-              className="bg-[#4ade80] hover:bg-[#22c55e] text-black font-semibold"
-              onClick={() => {
-                if (!selectedSale) return
-                const content = `
-                                <div style="font-family: 'Courier New', Courier, monospace; padding: 20px; text-align: center; color: #000; background: #fff;">
-                                    <div style="border-bottom: 2px dashed #000; padding-bottom: 10px; margin-bottom: 20px;">
-                                        <h2 style="font-size: 24px; font-weight: bold; margin: 0;">ShopPOS RECEIPT</h2>
-                                        <p style="margin: 5px 0;">123 Market Street, City</p>
-                                        <p style="margin: 5px 0;">Tel: +123 456 789</p>
-                                    </div>
-
-                                    <div style="text-align: left; margin-bottom: 20px; font-size: 14px;">
-                                        <p style="margin: 2px 0;"><strong>Invoice:</strong> ${
-                                          selectedSale.invoiceNumber ||
-                                          selectedSale._id
-                                            .substring(selectedSale._id.length - 8)
-                                            .toUpperCase()
-                                        }</p>
-                                        <p style="margin: 2px 0;"><strong>Date:</strong> ${format(
-                                          new Date(selectedSale.createdAt),
-                                          'MMM dd, yyyy HH:mm'
-                                        )}</p>
-                                        <p style="margin: 2px 0;"><strong>Seller:</strong> ${selectedSale.soldBy?.fullName || 'Admin'}</p>
-                                        ${
-                                          selectedSale.customerName
-                                            ? `<p style="margin: 2px 0;"><strong>Customer:</strong> ${selectedSale.customerName}</p>`
-                                            : ''
-                                        }
-                                    </div>
-
-                                    <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 14px;">
-                                        <thead>
-                                            <tr style="border-bottom: 1px solid #000;">
-                                                <th style="text-align: left; padding: 5px 0;">Item</th>
-                                                <th style="text-align: center;">Qty</th>
-                                                <th style="text-align: right;">Total</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                        ${selectedSale.items
-                                          .map(
-                                            (item: any) => `
-                                            <tr>
-                                                <td style="text-align: left; padding: 5px 0;">${
-                                                  item.productName || item.product?.name
-                                                }</td>
-                                                <td style="text-align: center;">${item.quantity}</td>
-                                                <td style="text-align: right;">Rs.${item.totalAmount.toLocaleString()}</td>
-                                            </tr>
-                                        `
-                                          )
-                                          .join('')}
-                                        </tbody>
-                                    </table>
-
-                                    <div style="border-top: 2px dashed #000; padding-top: 10px; font-size: 16px;">
-                                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                                            <span>Subtotal:</span>
-                                            <span>Rs. ${selectedSale.subtotal?.toLocaleString() || selectedSale.totalAmount?.toLocaleString()}</span>
-                                        </div>
-                                        ${
-                                          selectedSale.discountAmount > 0
-                                            ? `
-                                        <div style="display: flex; justify-content: space-between; color: #000;">
-                                            <span>Discount:</span>
-                                            <span>-Rs. ${selectedSale.discountAmount.toLocaleString()}</span>
-                                        </div>
-                                        `
-                                            : ''
-                                        }
-                                        <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 20px; margin-top: 10px; border-top: 1px solid #000; padding-top: 10px;">
-                                            <span>TOTAL:</span>
-                                            <span>Rs. ${selectedSale.totalAmount.toLocaleString()}</span>
-                                        </div>
-                                    </div>
-
-                                    <div style="margin-top: 40px; font-size: 12px; border-top: 1px solid #eee; padding-top: 20px;">
-                                        <p>Thank you for your purchase!</p>
-                                        <p>Software by Antigravity</p>
-                                    </div>
-                                </div>
-                            `
-                printContent({ title: 'Receipt', content })
-              }}
-            >
-              <Printer className="w-4 h-4 mr-2" />
-              Print Receipt
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
