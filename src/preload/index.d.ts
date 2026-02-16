@@ -155,6 +155,12 @@ declare global {
       dashboard: {
         getStats: (storeId: string) => Promise<any>
       }
+      config: {
+        get: () => Promise<{ success: boolean; data?: any; error?: string }>
+        save: (data: any) => Promise<{ success: boolean; error?: string }>
+        testConnection: (mongoUri: string) => Promise<{ success: boolean; message?: string; error?: string }>
+        getConnectionStatus: () => Promise<{ success: boolean; connected?: boolean; state?: number; error?: string }>
+      }
     }
   }
 }

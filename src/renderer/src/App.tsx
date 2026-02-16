@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { Toaster } from 'sonner'
+import { DatabaseConfigModal } from './components/shared/database-config-modal'
 import LoginPage from './pages/auth/Login'
 import AdminDashboard from './pages/admin/Dashboard'
 import AdminLayout from './layouts/AdminLayout'
@@ -41,6 +42,7 @@ import TransactionsPrintPreviewPage from './pages/store/accounting/transactions/
 import EditSimpleProduct from '@renderer/pages/store/inventory/products/EditSimpleProduct'
 import EditRawMaterialProduct from '@renderer/pages/store/inventory/products/EditRawMaterialProduct'
 import CustomersPage from '@renderer/pages/store/customers/page'
+import AdminSettingsPage from '@renderer/pages/admin/settings/page'
 
 interface User {
   id: string
@@ -80,13 +82,31 @@ function ProtectedRoute({
 
 function App(): React.JSX.Element {
   const [user, setUser] = useState<User | null>(null)
+  const [showDbConfig, setShowDbConfig] = useState(false)
+  const [dbConfigRequired, setDbConfigRequired] = useState(false)
 
   useEffect(() => {
     const savedUser = localStorage.getItem('user')
     if (savedUser) {
       setUser(JSON.parse(savedUser))
     }
+
+    // Check database connection on startup
+    checkDatabaseConnection()
   }, [])
+
+  const checkDatabaseConnection = async () => {
+    try {
+      const result = await window.api.config.getConnectionStatus()
+      if (result.success && !result.connected) {
+        console.warn('⚠️ Database not connected')
+        setShowDbConfig(true)
+        setDbConfigRequired(true)
+      }
+    } catch (error) {
+      console.error('Failed to check database connection:', error)
+    }
+  }
 
   const handleLoginSuccess = (userData: User) => {
     setUser(userData)
@@ -139,6 +159,7 @@ function App(): React.JSX.Element {
             <Route path="stores" element={<StoresPage />} />
             <Route path="stores/:id" element={<StoreDetails />} />
             <Route path="profile" element={<ProfilePage />} />
+            <Route path="settings" element={<AdminSettingsPage />} />
           </Route>
 
           <Route
@@ -196,6 +217,16 @@ function App(): React.JSX.Element {
         </Routes>
       </HashRouter>
       <Toaster position="bottom-right" />
+      {/* Database Configuration Modal */}
+      <DatabaseConfigModal
+        open={showDbConfig}
+        onClose={() => setShowDbConfig(false)}
+        onSuccess={() => {
+          setShowDbConfig(false)
+          setDbConfigRequired(false)
+        }}
+        canClose={!dbConfigRequired}
+      />
     </>
   )
 }

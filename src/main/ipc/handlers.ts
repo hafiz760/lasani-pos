@@ -4,6 +4,7 @@ import * as bcrypt from 'bcryptjs'
 import mongoose from 'mongoose'
 import * as fs from 'fs'
 import * as path from 'path'
+import { configManager } from '../lib/config-manager'
 
 // Helper to ensure data is cloneable for Electron IPC (Structured Clone Algorithm)
 // Mongoose ObjectIds and other internal types can cause "An object could not be cloned" errors.
@@ -100,7 +101,6 @@ export function registerIpcHandlers() {
   // Auth Handlers
   ipcMain.handle('auth:login', async (_event, { email, password }) => {
     try {
-      console.log(email, password)
       const user = await models.User.findOne({ email }).populate('role')
       if (!user) {
         return { success: false, error: 'Invalid email' }
@@ -2716,6 +2716,52 @@ export function registerIpcHandlers() {
           chartData
         }
       })
+    } catch (error: any) {
+      return { success: false, error: error.message }
+    }
+  })
+
+  // ============================================================
+  // CONFIG HANDLERS (for production database configuration)
+  // ============================================================
+
+  ipcMain.handle('config:get', async () => {
+    try {
+      const config = configManager.getConfig()
+      return { success: true, data: config }
+    } catch (error: any) {
+      return { success: false, error: error.message }
+    }
+  })
+
+  ipcMain.handle('config:save', async (_event, data) => {
+    try {
+      configManager.saveConfig(data)
+      return { success: true }
+    } catch (error: any) {
+      return { success: false, error: error.message }
+    }
+  })
+
+  ipcMain.handle('config:testConnection', async (_event, mongoUri: string) => {
+    try {
+      // Test the connection without affecting the main connection
+      const testConnection = await mongoose.createConnection(mongoUri).asPromise()
+      await testConnection.close()
+      return { success: true, message: 'Connection successful!' }
+    } catch (error: any) {
+      return { success: false, error: error.message }
+    }
+  })
+
+  ipcMain.handle('config:getConnectionStatus', async () => {
+    try {
+      const isConnected = mongoose.connection.readyState === 1
+      return {
+        success: true,
+        connected: isConnected,
+        state: mongoose.connection.readyState
+      }
     } catch (error: any) {
       return { success: false, error: error.message }
     }

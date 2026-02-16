@@ -66,9 +66,19 @@ app.whenReady().then(() => {
     }
   })
 
-  // Connect to Database and Register handlers
-  connectToDatabase().catch(console.error)
+  // Register IPC handlers first (needed for config management)
   registerIpcHandlers()
+
+  // Connect to Database (non-blocking)
+  connectToDatabase().then((result) => {
+    if (result.success) {
+      console.log('✅ Database connected successfully')
+    } else {
+      console.error('⚠️ Database connection failed:', result.error)
+      console.log('📝 User will be prompted to configure database connection')
+      // App will still start - user can configure DB from UI
+    }
+  })
 
   createWindow()
 
