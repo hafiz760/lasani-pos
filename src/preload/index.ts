@@ -130,6 +130,12 @@ const api = {
   },
   dashboard: {
     getStats: (storeId) => ipcRenderer.invoke('dashboard:getStats', storeId)
+  },
+  config: {
+    get: () => ipcRenderer.invoke('config:get'),
+    save: (data) => ipcRenderer.invoke('config:save', data),
+    testConnection: (mongoUri: string) => ipcRenderer.invoke('config:testConnection', mongoUri),
+    getConnectionStatus: () => ipcRenderer.invoke('config:getConnectionStatus')
   }
 }
 
