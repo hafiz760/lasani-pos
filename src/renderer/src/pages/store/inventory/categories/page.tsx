@@ -271,7 +271,7 @@ export default function CategoriesPage() {
                     <FormControl>
                       <Input
                         {...field}
-                        placeholder="Mobile Phones"
+                        placeholder="Ladies / Gents / Blanket / Quilt"
                         className="bg-muted border-border"
                       />
                     </FormControl>

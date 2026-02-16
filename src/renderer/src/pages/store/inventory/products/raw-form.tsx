@@ -22,7 +22,6 @@ const rawProductSchema = z.object({
   name: z.string().min(2, 'Product name is required'),
   sku: z.string().min(2, 'SKU is required'),
   category: z.string().min(1, 'Category is required'),
-  subcategory: z.string().optional().or(z.literal('')),
   brand: z.string().optional().or(z.literal('')),
   barcode: z.string().optional().or(z.literal('')),
   description: z.string().optional().or(z.literal('')),
@@ -71,7 +70,6 @@ export default function RawProductFormPage() {
       name: '',
       sku: `RAW-${Date.now()}`,
       category: '',
-      subcategory: '',
       brand: '',
       barcode: '',
       description: '',
@@ -132,7 +130,6 @@ export default function RawProductFormPage() {
           name: product.name,
           sku: product.sku,
           category: product.category?._id || product.category,
-          subcategory: product.subcategory?._id || product.subcategory || '',
           brand: product.brand?._id || product.brand || '',
           barcode: product.barcode || '',
           description: product.description || '',
@@ -393,39 +390,11 @@ export default function RawProductFormPage() {
                           <FormControl>
                             <SearchableDropdown
                               value={field.value}
-                              onChange={(val) => {
-                                field.onChange(val)
-                                form.setValue('subcategory', '')
-                              }}
+                              onChange={field.onChange}
                               options={categories
                                 .filter((c) => !c.parent)
                                 .map((c) => ({ label: c.name, value: c._id }))}
                               allowClear={false}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="subcategory"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Subcategory (Optional)</FormLabel>
-                          <FormControl>
-                            <SearchableDropdown
-                              value={field.value || ''}
-                              onChange={field.onChange}
-                              options={categories
-                                .filter(
-                                  (c) =>
-                                    c.parent?._id === form.getValues('category') ||
-                                    c.parent === form.getValues('category')
-                                )
-                                .map((c) => ({ label: c.name, value: c._id }))}
-                              disabled={!form.watch('category')}
                             />
                           </FormControl>
                           <FormMessage />

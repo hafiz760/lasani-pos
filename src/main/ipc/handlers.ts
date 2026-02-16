@@ -1360,6 +1360,19 @@ export function registerIpcHandlers() {
     }
   )
 
+  ipcMain.handle('suppliers:getByProductId', async (_event, { storeId, productId }) => {
+    try {
+      const supplier = await models.Supplier.findOne({
+        store: storeId,
+        products: productId
+      }).lean()
+      if (!supplier) return { success: true, data: null }
+      return toJSON({ success: true, data: supplier })
+    } catch (error: any) {
+      return { success: false, error: error.message }
+    }
+  })
+
   ipcMain.handle('suppliers:create', async (_event, data) => {
     try {
       const supplier = await models.Supplier.create(data)
@@ -1600,6 +1613,39 @@ export function registerIpcHandlers() {
       customer.balance = Math.max(0, customer.balance - appliedTotal)
       await customer.save()
 
+      if (appliedTotal > 0) {
+        const storeId = String((customer as any).store?._id || customer.store)
+        const accounts = await ensureDefaultAccounts(storeId)
+        const method = String(paymentData?.method || 'Cash')
+        const useBank = method === 'Bank Transfer' || method === 'Card'
+        const resolvedAccountId = paymentData?.accountId
+          ? String(paymentData.accountId)
+          : useBank
+            ? String(accounts.bank._id)
+            : String(accounts.cash._id)
+        const transactionDate = paymentData?.paymentDate
+          ? new Date(paymentData.paymentDate)
+          : new Date()
+
+        if (resolvedAccountId) {
+          await models.Account.findByIdAndUpdate(resolvedAccountId, {
+            $inc: { currentBalance: appliedTotal }
+          })
+
+          await createAccountTransaction({
+            storeId,
+            createdBy: String(paymentData?.recordedBy || customer._id),
+            description: `Customer payment ${customer.name}`,
+            referenceType: 'PAYMENT',
+            referenceId: String(customer._id),
+            accountId: resolvedAccountId,
+            entryType: 'DEBIT',
+            amount: appliedTotal,
+            transactionDate
+          })
+        }
+      }
+
       return toJSON({
         success: true,
         data: customer.toObject(),
@@ -1685,8 +1731,14 @@ export function registerIpcHandlers() {
       // Update product stock and prices
       if (po.items && po.items.length > 0) {
         for (const item of po.items) {
+          const product = await models.Product.findById(item.product).select('productKind')
+          const stockInc: any = { stockLevel: item.quantity }
+          if (product?.productKind === 'RAW_MATERIAL') {
+            stockInc.totalMeters = item.quantity
+          }
+
           const updateData: any = {
-            $inc: { stockLevel: item.quantity },
+            $inc: stockInc,
             $set: { buyingPrice: item.unitCost }
           }
 
@@ -1712,8 +1764,13 @@ export function registerIpcHandlers() {
       if (oldPO && oldPO.items && oldPO.items.length > 0) {
         // Revert stock from old items
         for (const item of oldPO.items) {
+          const product = await models.Product.findById(item.product).select('productKind')
+          const stockInc: any = { stockLevel: -item.quantity }
+          if (product?.productKind === 'RAW_MATERIAL') {
+            stockInc.totalMeters = -item.quantity
+          }
           await models.Product.findByIdAndUpdate(item.product, {
-            $inc: { stockLevel: -item.quantity }
+            $inc: stockInc
           })
         }
       }
@@ -1724,8 +1781,14 @@ export function registerIpcHandlers() {
       // 3. Apply new stock and price changes
       if (po && po.items && po.items.length > 0) {
         for (const item of po.items) {
+          const product = await models.Product.findById(item.product).select('productKind')
+          const stockInc: any = { stockLevel: item.quantity }
+          if (product?.productKind === 'RAW_MATERIAL') {
+            stockInc.totalMeters = item.quantity
+          }
+
           const updateData: any = {
-            $inc: { stockLevel: item.quantity },
+            $inc: stockInc,
             $set: { buyingPrice: item.unitCost }
           }
 
@@ -1823,8 +1886,13 @@ export function registerIpcHandlers() {
       if (sale.items && sale.items.length > 0) {
         for (const item of sale.items) {
           if (item.product) {
+            const product = await models.Product.findById(item.product).select('productKind')
+            const stockInc: any = { stockLevel: -item.quantity }
+            if (product?.productKind === 'RAW_MATERIAL') {
+              stockInc.totalMeters = -item.quantity
+            }
             await models.Product.findByIdAndUpdate(item.product, {
-              $inc: { stockLevel: -item.quantity }
+              $inc: stockInc
             })
           }
         }
@@ -1880,8 +1948,13 @@ export function registerIpcHandlers() {
       if (sale.items && sale.items.length > 0) {
         for (const item of sale.items) {
           if (item.product) {
+            const product = await models.Product.findById(item.product).select('productKind')
+            const stockInc: any = { stockLevel: item.quantity }
+            if (product?.productKind === 'RAW_MATERIAL') {
+              stockInc.totalMeters = item.quantity
+            }
             await models.Product.findByIdAndUpdate(item.product, {
-              $inc: { stockLevel: item.quantity }
+              $inc: stockInc
             })
           }
         }
@@ -1970,8 +2043,13 @@ export function registerIpcHandlers() {
         }
 
         for (const refundItem of refundLineItems) {
+          const product = await models.Product.findById(refundItem.product).select('productKind')
+          const stockInc: any = { stockLevel: refundItem.quantity }
+          if (product?.productKind === 'RAW_MATERIAL') {
+            stockInc.totalMeters = refundItem.quantity
+          }
           await models.Product.findByIdAndUpdate(refundItem.product, {
-            $inc: { stockLevel: refundItem.quantity }
+            $inc: stockInc
           })
         }
 

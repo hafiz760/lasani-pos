@@ -66,8 +66,6 @@ export default function ProductsPage() {
   const getStockUnit = (product: any) => {
     if (product.productKind === 'RAW_MATERIAL') {
       return 'meters'
-    } else if (product.productKind === 'COMBO_SET') {
-      return 'sets'
     } else {
       return 'pcs'
     }
@@ -96,10 +94,6 @@ export default function ProductsPage() {
 
     if (product.productKind === 'RAW_MATERIAL') {
       return 'bg-amber-500/10 text-amber-600 border-amber-500/20'
-    }
-
-    if (product.productKind === 'COMBO_SET') {
-      return 'bg-purple-500/10 text-purple-600 border-purple-500/20'
     }
 
     return 'bg-muted text-muted-foreground border-border'
@@ -162,7 +156,7 @@ export default function ProductsPage() {
   }
 
   const openEdit = (product: any) => {
-    if (product.productKind === 'RAW') {
+    if (product.productKind === 'RAW_MATERIAL') {
       navigate(`/dashboard/inventory/products/${product._id}/edit-raw`)
     } else {
       navigate(`/dashboard/inventory/products/${product._id}/edit`)
@@ -209,11 +203,6 @@ export default function ProductsPage() {
                   ARCHIVED
                 </span>
               )}
-              {item.productKind === 'COMBO_SET' && (
-                <span className="text-[9px] bg-purple-500/10 text-purple-600 px-1.5 py-0.5 rounded">
-                  🎁 COMBO
-                </span>
-              )}
             </div>
             <span className="text-[10px] text-muted-foreground uppercase font-mono">
               {item.sku}
@@ -225,43 +214,7 @@ export default function ProductsPage() {
     {
       header: 'Category',
       accessor: 'category',
-      render: (item: any) => (
-        <div className="flex flex-col">
-          <span>{item.category?.name}</span>
-          {item.subcategory && (
-            <span className="text-[10px] text-muted-foreground italic">
-              {item.subcategory.name}
-            </span>
-          )}
-        </div>
-      )
-    },
-    {
-      header: 'Color',
-      accessor: 'color',
-      render: (item: any) => (
-        <div className="flex items-center gap-2">
-          {item.color && item.color !== 'none' ? (
-            <>
-              <div
-                className="h-4 w-4 rounded-full border border-border shadow-sm"
-                style={{ backgroundColor: COLOR_MAP[item.color] || item.color }}
-              />
-              <span className="text-[10px] text-muted-foreground font-mono uppercase">
-                {item.color}
-              </span>
-            </>
-          ) : (
-            <span className="text-[10px] text-muted-foreground italic">None</span>
-          )}
-        </div>
-      )
-    },
-    {
-      header: 'Brand',
-      accessor: 'brand.name',
-      render: (item: any) =>
-        item.brand?.name || <span className="text-muted-foreground italic">No Brand</span>
+      render: (item: any) => <span>{item.category?.name}</span>
     },
     {
       header: 'Price',
@@ -273,12 +226,7 @@ export default function ProductsPage() {
           </span>
           {/* ✅ Show price unit */}
           <span className="text-[9px] text-muted-foreground">
-            per{' '}
-            {item.productKind === 'RAW_MATERIAL'
-              ? 'meter'
-              : item.productKind === 'COMBO_SET'
-                ? 'set'
-                : 'piece'}
+            per {item.productKind === 'RAW_MATERIAL' ? 'meter' : 'piece'}
           </span>
         </div>
       )
@@ -290,6 +238,15 @@ export default function ProductsPage() {
         <Badge className={getStockBadgeClass(item)}>
           {formatStock(item)} {/* ✅ Dynamic unit display */}
         </Badge>
+      )
+    },
+    {
+      header: 'Stock Value',
+      accessor: 'stockValue',
+      render: (item: any) => (
+        <span className="font-semibold text-foreground">
+          Rs. {((item.stockLevel || 0) * (item.sellingPrice || 0)).toLocaleString()}
+        </span>
       )
     },
     {

@@ -77,8 +77,6 @@ export default function SupplierDetailsPage() {
   const getStockUnit = (product: any) => {
     if (product.productKind === 'RAW_MATERIAL') {
       return 'meters'
-    } else if (product.productKind === 'COMBO_SET') {
-      return 'sets'
     } else {
       return 'pcs'
     }
@@ -269,6 +267,9 @@ export default function SupplierDetailsPage() {
                   <th className="text-left p-4 text-sm font-semibold text-muted-foreground">
                     Stock
                   </th>
+                  <th className="text-right p-4 text-sm font-semibold text-muted-foreground">
+                    Total Cost
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -284,9 +285,6 @@ export default function SupplierDetailsPage() {
                         {/* ✅ Show product type badge */}
                         {product.productKind === 'RAW_MATERIAL' && (
                           <span className="text-xs text-amber-600 mt-1">📏 Raw Material</span>
-                        )}
-                        {product.productKind === 'COMBO_SET' && (
-                          <span className="text-xs text-purple-600 mt-1">🎁 Combo Set</span>
                         )}
                       </div>
                     </td>
@@ -308,12 +306,7 @@ export default function SupplierDetailsPage() {
                         </span>
                         {/* ✅ Show price unit */}
                         <span className="text-xs text-muted-foreground">
-                          per{' '}
-                          {product.productKind === 'RAW_MATERIAL'
-                            ? 'meter'
-                            : product.productKind === 'COMBO_SET'
-                              ? 'set'
-                              : 'piece'}
+                          per {product.productKind === 'RAW_MATERIAL' ? 'meter' : 'piece'}
                         </span>
                       </div>
                     </td>
@@ -335,6 +328,12 @@ export default function SupplierDetailsPage() {
                       >
                         {formatStock(product)}
                       </Badge>
+                    </td>
+                    <td className="p-4 text-right">
+                      <span className="text-sm font-semibold text-foreground">
+                        Rs.{' '}
+                        {((product.buyingPrice || 0) * (product.stockLevel || 0)).toLocaleString()}
+                      </span>
                     </td>
                   </tr>
                 ))}

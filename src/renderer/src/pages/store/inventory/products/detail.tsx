@@ -46,14 +46,12 @@ export default function ProductDetails() {
   const getStockUnit = () => {
     if (!product) return 'pcs'
     if (product.productKind === 'RAW_MATERIAL') return 'meters'
-    if (product.productKind === 'COMBO_SET') return 'sets'
     return 'pcs'
   }
 
   const getProductTypeLabel = () => {
     if (!product) return 'Simple Product'
     if (product.productKind === 'RAW_MATERIAL') return 'Raw Material (Fabric)'
-    if (product.productKind === 'COMBO_SET') return 'Combo Set'
     return 'Simple Product'
   }
 
@@ -63,13 +61,6 @@ export default function ProductDetails() {
       return (
         <Badge className="bg-amber-500/10 text-amber-600 border-amber-500/20">
           📏 Fabric/Raw Material
-        </Badge>
-      )
-    }
-    if (product.productKind === 'COMBO_SET') {
-      return (
-        <Badge className="bg-purple-500/10 text-purple-600 border-purple-500/20">
-          🎁 Combo Set
         </Badge>
       )
     }
@@ -180,14 +171,6 @@ export default function ProductDetails() {
               >
                 {product.category?.name}
               </Badge>
-              {product.subcategory && (
-                <Badge
-                  variant="outline"
-                  className="border-[#4ade80]/30 bg-[#4ade80]/5 text-[10px] uppercase text-[#4ade80]"
-                >
-                  {product.subcategory?.name}
-                </Badge>
-              )}
               <span>•</span>
               <span>SKU: {product.sku}</span>
             </div>
@@ -201,8 +184,6 @@ export default function ProductDetails() {
               // Navigate to appropriate edit page based on product type
               if (product.productKind === 'RAW_MATERIAL') {
                 navigate(`/dashboard/inventory/products/${product._id}/edit-raw`)
-              } else if (product.productKind === 'COMBO_SET') {
-                navigate(`/dashboard/inventory/products/${product._id}/edit-combo`)
               } else {
                 navigate(`/dashboard/inventory/products/${product._id}/edit`)
               }
@@ -237,12 +218,7 @@ export default function ProductDetails() {
               Rs. {(product.sellingPrice || 0).toLocaleString()}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              per{' '}
-              {product.productKind === 'RAW_MATERIAL'
-                ? 'meter'
-                : product.productKind === 'COMBO_SET'
-                  ? 'set'
-                  : 'piece'}
+              per {product.productKind === 'RAW_MATERIAL' ? 'meter' : 'piece'}
             </p>
           </CardContent>
         </Card>
@@ -260,12 +236,7 @@ export default function ProductDetails() {
               Rs. {(product.buyingPrice || 0).toLocaleString()}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              per{' '}
-              {product.productKind === 'RAW_MATERIAL'
-                ? 'meter'
-                : product.productKind === 'COMBO_SET'
-                  ? 'set'
-                  : 'piece'}
+              per {product.productKind === 'RAW_MATERIAL' ? 'meter' : 'piece'}
             </p>
             {profitMargin > 0 && (
               <p className="text-xs text-green-500 font-semibold mt-1">
@@ -405,30 +376,6 @@ export default function ProductDetails() {
                         </span>
                       </div>
                     )}
-                  </>
-                )}
-
-                {/* Combo Set Specific Fields */}
-                {product.productKind === 'COMBO_SET' && product.comboComponents && (
-                  <>
-                    <div className="grid grid-cols-3 p-4 bg-purple-500/5">
-                      <span className="text-muted-foreground text-sm font-medium">Components</span>
-                      <div className="col-span-2 space-y-1">
-                        {product.comboComponents.map((comp: any, idx: number) => (
-                          <div key={idx} className="text-sm text-foreground">
-                            • {comp.name} - {comp.meters}m
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-3 p-4">
-                      <span className="text-muted-foreground text-sm font-medium">
-                        Total Meters
-                      </span>
-                      <span className="col-span-2 text-sm text-purple-600 font-semibold">
-                        {(product.totalComboMeters || 0).toFixed(1)} meters
-                      </span>
-                    </div>
                   </>
                 )}
 

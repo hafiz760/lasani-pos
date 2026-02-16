@@ -46,6 +46,8 @@ const storeMenuItems = [
     ]
   },
   { icon: Users, label: 'Suppliers', href: '/dashboard/purchases/suppliers' },
+  { icon: BarChart3, label: 'Sale Reports', href: '/dashboard/reports/sales' },
+
   {
     icon: Wallet,
     label: 'Accounting',
@@ -56,7 +58,6 @@ const storeMenuItems = [
       { label: 'Transactions', href: '/dashboard/accounting/transactions' }
     ]
   },
-  { icon: BarChart3, label: 'Reports', href: '/dashboard/reports/sales' },
   { icon: Settings, label: 'Settings', href: '/dashboard/settings' }
 ]
 
@@ -70,7 +71,7 @@ export default function StoreLayout({ onLogout }: StoreLayoutProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
   const [user, setUser] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const [expandedMenus, setExpandedMenus] = useState<string[]>(['Inventory', 'Accounting'])
+  const [expandedMenus, setExpandedMenus] = useState<string[]>([])
 
   useEffect(() => {
     const loadUser = () => {
@@ -96,6 +97,17 @@ export default function StoreLayout({ onLogout }: StoreLayoutProps) {
       prev.includes(label) ? prev.filter((item) => item !== label) : [...prev, label]
     )
   }
+
+  useEffect(() => {
+    const activeParent = storeMenuItems.find(
+      (item) =>
+        item.submenu?.some((subItem) => location.pathname.startsWith(subItem.href)) ||
+        (item.submenu && location.pathname.startsWith(item.href))
+    )
+    if (activeParent && !expandedMenus.includes(activeParent.label)) {
+      setExpandedMenus((prev) => [...prev, activeParent.label])
+    }
+  }, [location.pathname, expandedMenus])
 
   const handleLogout = () => {
     if (onLogout) {
@@ -154,7 +166,13 @@ export default function StoreLayout({ onLogout }: StoreLayoutProps) {
           <ScrollArea className="h-[calc(100vh-144px)] py-4">
             <div className="px-3 space-y-1">
               {storeMenuItems.map((item) => {
-                const isActive = location.pathname.startsWith(item.href)
+                const isActive =
+                  item.href === '/dashboard'
+                    ? location.pathname === '/dashboard'
+                    : location.pathname.startsWith(item.href)
+                const isParentActive =
+                  item.submenu?.some((subItem) => location.pathname.startsWith(subItem.href)) ||
+                  isActive
                 const hasSubmenu = item.submenu && item.submenu.length > 0
                 const isExpanded = expandedMenus.includes(item.label)
 
@@ -179,7 +197,7 @@ export default function StoreLayout({ onLogout }: StoreLayoutProps) {
                         <Button
                           variant="ghost"
                           className={`w-full justify-between mb-1 ${
-                            isActive ? 'text-foreground' : 'text-muted-foreground'
+                            isParentActive ? 'text-foreground' : 'text-muted-foreground'
                           } ${!isSidebarOpen && 'px-2 justify-center'}`}
                           onClick={() => toggleMenu(item.label)}
                         >

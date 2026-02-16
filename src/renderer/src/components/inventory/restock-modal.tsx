@@ -38,7 +38,8 @@ export function RestockModal({
   const [loading, setLoading] = useState(false)
   const [fetchingInfo, setFetchingInfo] = useState(false)
   const [suppliers, setSuppliers] = useState<any[]>([])
-  console.log(product, 'product')
+  const [inventoryHistory, setInventoryHistory] = useState<any[]>([])
+  const [lastSupplierEntry, setLastSupplierEntry] = useState<any>(null)
   // Form State
   const [supplierId, setSupplierId] = useState('')
   const [quantity, setQuantity] = useState(1)
@@ -58,6 +59,20 @@ export function RestockModal({
     }
   }, [open, product, currentStore])
 
+  useEffect(() => {
+    if (!supplierId || inventoryHistory.length === 0) {
+      setLastSupplierEntry(null)
+      return
+    }
+    const match = inventoryHistory.find((entry) => {
+      if (!entry?.supplier) return false
+      const supplierEntryId =
+        typeof entry.supplier === 'string' ? entry.supplier : entry.supplier?._id
+      return String(supplierEntryId) === String(supplierId)
+    })
+    setLastSupplierEntry(match || null)
+  }, [supplierId, inventoryHistory])
+
   const fetchData = async () => {
     setFetchingInfo(true)
     try {
@@ -68,6 +83,17 @@ export function RestockModal({
       })
       if (suppliersResult.success) {
         setSuppliers(suppliersResult.data)
+      }
+
+      if (product?._id && currentStore?._id) {
+        const historyResult = await window.api.inventory.getHistory({
+          productId: product._id,
+          storeId: currentStore._id,
+          limit: 50
+        })
+        if (historyResult.success) {
+          setInventoryHistory(historyResult.data || [])
+        }
       }
     } catch (error) {
       console.error('Failed to fetch suppliers', error)
@@ -111,6 +137,7 @@ export function RestockModal({
   }
 
   const totalCost = quantity * unitCost
+  const isRawMaterial = product?.productKind === 'RAW_MATERIAL'
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -160,12 +187,23 @@ export function RestockModal({
               <Input
                 id="quantity"
                 type="number"
-                min="0.1"
-                step={product?.productKind === 'RAW_MATERIAL' ? '0.1' : '1'}
+                min={isRawMaterial ? '0.1' : '1'}
+                step={isRawMaterial ? '0.1' : '1'}
                 value={quantity}
-                onChange={(e) => setQuantity(Math.max(0.1, parseFloat(e.target.value) || 0))}
+                onChange={(e) => {
+                  const nextValue = isRawMaterial
+                    ? parseFloat(e.target.value)
+                    : Math.floor(parseFloat(e.target.value))
+                  const sanitized = Number.isNaN(nextValue) ? 0 : nextValue
+                  setQuantity(Math.max(isRawMaterial ? 0.1 : 1, sanitized))
+                }}
                 className="font-bold"
               />
+              {lastSupplierEntry && (
+                <p className="text-[11px] text-muted-foreground">
+                  Last supply: {lastSupplierEntry.quantity} {isRawMaterial ? 'meters' : 'units'}
+                </p>
+              )}
             </div>
             <div className="space-y-2">
               <Label

@@ -774,7 +774,7 @@ export default function CustomersPage() {
                     variant="outline"
                     className={`h-10 text-xs font-semibold ${
                       paymentMethod === method
-                        ? 'bg-[#4ade80] text-black border-[#4ade80] hover:bg-[#4ade80]'
+                        ? 'text-[#4ade80] border-[#4ade80] hover:bg-[#4ade80] hover:text-[#4ade80]'
                         : 'bg-transparent'
                     }`}
                     onClick={() => setPaymentMethod(method)}

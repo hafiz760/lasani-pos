@@ -1,15 +1,15 @@
-import { Package, Ruler, Layers } from 'lucide-react'
+import { Package, Ruler } from 'lucide-react'
 
 interface ProductTypeSelectorProps {
-  value: 'SIMPLE' | 'RAW_MATERIAL' | 'COMBO_SET'
-  onChange: (value: 'SIMPLE' | 'RAW_MATERIAL' | 'COMBO_SET') => void
+  value: 'SIMPLE' | 'RAW_MATERIAL'
+  onChange: (value: 'SIMPLE' | 'RAW_MATERIAL') => void
 }
 
 export function ProductTypeSelector({ value, onChange }: ProductTypeSelectorProps) {
   return (
     <div className="bg-card border border-border rounded-lg p-6">
       <h2 className="text-lg font-semibold mb-4">Select Product Type</h2>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Simple Product */}
         <button
           type="button"
@@ -57,29 +57,6 @@ export function ProductTypeSelector({ value, onChange }: ProductTypeSelectorProp
           <div className="text-center space-y-1">
             <h3 className="font-bold text-amber-600">Raw Material</h3>
             <p className="text-xs text-muted-foreground">Fabric with meter calculations</p>
-          </div>
-        </button>
-
-        {/* Combo Set */}
-        <button
-          type="button"
-          onClick={() => onChange('COMBO_SET')}
-          className={`group flex flex-col items-center gap-4 p-6 border-2 rounded-xl transition-all ${
-            value === 'COMBO_SET'
-              ? 'border-purple-500 bg-purple-500/10'
-              : 'border-border hover:border-purple-500/50 hover:bg-purple-500/5'
-          }`}
-        >
-          <div
-            className={`w-14 h-14 rounded-full flex items-center justify-center transition-colors ${
-              value === 'COMBO_SET' ? 'bg-purple-500/20' : 'bg-purple-500/10'
-            }`}
-          >
-            <Layers className="w-7 h-7 text-purple-500" />
-          </div>
-          <div className="text-center space-y-1">
-            <h3 className="font-bold text-purple-600">Combo Set</h3>
-            <p className="text-xs text-muted-foreground">Multi-piece sets (3-piece)</p>
           </div>
         </button>
       </div>

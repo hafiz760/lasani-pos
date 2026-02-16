@@ -183,6 +183,25 @@ export default function SalesReportsPage() {
       )
     },
     {
+      header: 'Customer',
+      accessor: 'customer.name',
+      render: (item: any) => (
+        <span className="text-muted-foreground">
+          {item.customer?.name || (item.paymentStatus === 'PENDING' ? 'Credit' : 'Walk-in')}
+        </span>
+      )
+    },
+    {
+      header: 'Method',
+      accessor: 'paymentMethod',
+      render: (item: any) => (
+        <span className="text-muted-foreground">
+          {item.paymentMethod}
+          {item.paymentChannel ? ` (${item.paymentChannel})` : ''}
+        </span>
+      )
+    },
+    {
       header: 'Total',
       accessor: 'totalAmount',
       render: (item: any) => (

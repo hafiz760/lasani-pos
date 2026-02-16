@@ -15,41 +15,43 @@ import {
 } from '@renderer/components/ui/form'
 import { Input } from '@renderer/components/ui/input'
 import { Textarea } from '@renderer/components/ui/textarea'
-import { Card, CardContent, CardHeader, CardTitle } from '@renderer/components/ui/card'
 import { Badge } from '@renderer/components/ui/badge'
 import { toast } from 'sonner'
-import {
-  ArrowLeft,
-  Save,
-  Loader2,
-  Package,
-  TrendingUp,
-  PackagePlus,
-  AlertCircle,
-  DollarSign,
-  Ruler,
-  Lock,
-  Edit
-} from 'lucide-react'
-import { Separator } from '@renderer/components/ui/separator'
+import { ArrowLeft, Save, Loader2, PackagePlus, Lock, Edit } from 'lucide-react'
 import { Alert, AlertDescription } from '@renderer/components/ui/alert'
 import { RestockModal } from '@renderer/components/inventory/restock-modal'
-import { SearchableSelect } from '@renderer/components/shared/searchable-select'
+import { SupplierInventorySection } from '@renderer/components/inventory/product-form/supplier-inventory-section'
+import { BasicInformation } from '@renderer/components/inventory/product-form/basic-information'
+import { ClothDetails } from '@renderer/components/inventory/product-form/cloth-details'
 
 const formSchema = z.object({
   name: z.string().min(1, 'Product name is required'),
   sku: z.string().min(1, 'SKU is required'),
   barcode: z.string().optional(),
   category: z.string().optional(),
-  subcategory: z.string().optional(),
   brand: z.string().optional(),
   supplier: z.string().optional(), // ✅ NEW
   description: z.string().optional(),
-  buyingPrice: z.string().min(1, 'Buying price per meter is required'),
-  sellingPrice: z.string().min(1, 'Selling price per meter is required'),
-  totalMeters: z.string().optional(),
-  metersPerUnit: z.string().optional(),
-  minStockLevel: z.string().optional(),
+  buyingPrice: z.preprocess(
+    (val) => (val === '' || val === undefined ? undefined : Number(val)),
+    z.number().min(0.01, 'Buying price per meter is required')
+  ),
+  sellingPrice: z.preprocess(
+    (val) => (val === '' || val === undefined ? undefined : Number(val)),
+    z.number().min(0.01, 'Selling price per meter is required')
+  ),
+  totalMeters: z.preprocess(
+    (val) => (val === '' || val === undefined ? undefined : Number(val)),
+    z.number().min(0, 'Total meters must be 0 or more').optional()
+  ),
+  metersPerUnit: z.preprocess(
+    (val) => (val === '' || val === undefined ? undefined : Number(val)),
+    z.number().min(0, 'Meters per unit must be 0 or more').optional()
+  ),
+  minStockLevel: z.preprocess(
+    (val) => (val === '' || val === undefined ? undefined : Number(val)),
+    z.number().min(0, 'Minimum stock must be 0 or more').optional()
+  ),
   color: z.string().optional(),
   fabricType: z.string().optional(),
   pattern: z.string().optional(),
@@ -64,10 +66,16 @@ export default function EditRawMaterialProduct() {
   const [currentStore, setCurrentStore] = useState<any>(null)
   const [product, setProduct] = useState<any>(null)
   const [categories, setCategories] = useState<any[]>([])
-  const [subcategories, setSubcategories] = useState<any[]>([])
   const [brands, setBrands] = useState<any[]>([])
-  const [suppliers, setSuppliers] = useState<any[]>([]) // ✅ NEW
-  const [currentSupplier, setCurrentSupplier] = useState<any>(null) // ✅ NEW
+  const [attributes, setAttributes] = useState<any>({
+    fabricTypes: [],
+    productTypes: [],
+    pieceCounts: [],
+    patterns: [],
+    collections: [],
+    colors: [],
+    sizes: []
+  })
   const [showRestock, setShowRestock] = useState(false)
 
   // ✅ Sales check state
@@ -75,22 +83,21 @@ export default function EditRawMaterialProduct() {
   const [salesCount, setSalesCount] = useState(0)
   const [isCheckingSales, setIsCheckingSales] = useState(true)
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+  const form = useForm<any>({
+    resolver: zodResolver(formSchema) as any,
     defaultValues: {
       name: '',
       sku: '',
       barcode: '',
       category: '',
-      subcategory: '',
       brand: '',
       supplier: '', // ✅ NEW
       description: '',
-      buyingPrice: '',
-      sellingPrice: '',
-      totalMeters: '',
-      metersPerUnit: '',
-      minStockLevel: '5',
+      buyingPrice: 0,
+      sellingPrice: 0,
+      totalMeters: 0,
+      metersPerUnit: 0,
+      minStockLevel: 5,
       color: '',
       fabricType: '',
       pattern: '',
@@ -122,15 +129,26 @@ export default function EditRawMaterialProduct() {
 
   const loadDropdownData = async () => {
     try {
-      const [categoriesRes, brandsRes, suppliersRes] = await Promise.all([
+      const [categoriesRes, brandsRes, attrsRes] = await Promise.all([
         window.api.categories.getAll({ storeId: currentStore._id }),
         window.api.brands.getAll({ storeId: currentStore._id }),
-        window.api.suppliers.getAll({ storeId: currentStore._id }) // ✅ NEW
+        window.api.attributes.getAll({ storeId: currentStore._id })
       ])
 
       if (categoriesRes.success) setCategories(categoriesRes.data)
       if (brandsRes.success) setBrands(brandsRes.data)
-      if (suppliersRes.success) setSuppliers(suppliersRes.data) // ✅ NEW
+      if (attrsRes.success) {
+        const attrs = attrsRes.data
+        setAttributes({
+          fabricTypes: attrs.filter((a: any) => a.type === 'FABRIC'),
+          productTypes: attrs.filter((a: any) => a.type === 'OTHER'),
+          pieceCounts: attrs.filter((a: any) => a.type === 'PIECE_COUNT'),
+          patterns: attrs.filter((a: any) => a.type === 'PATTERN'),
+          collections: attrs.filter((a: any) => a.type === 'COLLECTION'),
+          colors: attrs.filter((a: any) => a.type === 'COLOR'),
+          sizes: attrs.filter((a: any) => a.type === 'SIZE')
+        })
+      }
     } catch (error) {
       console.error('Failed to load dropdown data:', error)
     }
@@ -163,16 +181,38 @@ export default function EditRawMaterialProduct() {
         setProduct(prod)
 
         // ✅ Get supplier from stock entry
+        const normalizeId = (value: any) => {
+          if (!value) return ''
+          if (typeof value === 'string') return value
+          if (typeof value === 'object' && value.$oid) return String(value.$oid)
+          if (typeof value === 'object' && value._id) return String(value._id)
+          if (typeof value.toString === 'function') return String(value.toString())
+          return ''
+        }
+
         let supplierIdFromStock = ''
         try {
           const stockEntryRes = await window.api.products.getInitialStockEntry(id)
           if (stockEntryRes.success && stockEntryRes.data?.supplier) {
             const supplierData = stockEntryRes.data.supplier
-            supplierIdFromStock = typeof supplierData === 'string' ? supplierData : supplierData._id
-            setCurrentSupplier(supplierData)
+            supplierIdFromStock = normalizeId(supplierData)
           }
         } catch (error) {
           console.error('Failed to load supplier:', error)
+        }
+
+        if (!supplierIdFromStock) {
+          try {
+            const supplierRes = await window.api.suppliers.getByProductId({
+              storeId: currentStore._id,
+              productId: id
+            })
+            if (supplierRes.success && supplierRes.data?._id) {
+              supplierIdFromStock = normalizeId(supplierRes.data._id)
+            }
+          } catch (error) {
+            console.error('Failed to resolve supplier by product id:', error)
+          }
         }
 
         form.reset({
@@ -180,24 +220,19 @@ export default function EditRawMaterialProduct() {
           sku: prod.sku || '',
           barcode: prod.barcode || '',
           category: prod.category?._id || '',
-          subcategory: prod.subcategory?._id || '',
           brand: prod.brand?._id || '',
           supplier: supplierIdFromStock, // ✅ NEW
           description: prod.description || '',
-          buyingPrice: String(prod.buyingPrice || ''),
-          sellingPrice: String(prod.sellingPrice || ''),
-          totalMeters: String(prod.totalMeters || ''),
-          metersPerUnit: String(prod.metersPerUnit || ''),
-          minStockLevel: String(prod.minStockLevel || 5),
+          buyingPrice: prod.buyingPrice || 0,
+          sellingPrice: prod.sellingPrice || 0,
+          totalMeters: prod.totalMeters || 0,
+          metersPerUnit: prod.metersPerUnit || 0,
+          minStockLevel: prod.minStockLevel || 5,
           color: prod.color || '',
           fabricType: prod.fabricType || '',
           pattern: prod.pattern || '',
           designNumber: prod.designNumber || ''
         })
-
-        if (prod.category?._id) {
-          loadSubcategories(prod.category._id)
-        }
       } else {
         toast.error('Product not found')
         navigate('/dashboard/inventory/products')
@@ -206,13 +241,6 @@ export default function EditRawMaterialProduct() {
       toast.error('Failed to load product')
     } finally {
       setIsLoading(false)
-    }
-  }
-
-  const loadSubcategories = async (categoryId: string) => {
-    const category = categories.find((c) => c._id === categoryId)
-    if (category?.subcategories) {
-      setSubcategories(category.subcategories)
     }
   }
 
@@ -227,7 +255,7 @@ export default function EditRawMaterialProduct() {
       const result = await window.api.products.update(id, {
         storeId: currentStore._id,
         ...values,
-        supplier: values.supplier || null, // ✅ NEW
+        supplier: values.supplier || null,
         totalMeters: totalMetersNum,
         metersPerUnit: metersPerUnitNum,
         productKind: 'RAW_MATERIAL',
@@ -242,7 +270,6 @@ export default function EditRawMaterialProduct() {
         comboComponents: [],
         twoComponentPrices: [],
         category: values.category || null,
-        subcategory: values.subcategory || null,
         brand: values.brand || null
       })
 
@@ -274,12 +301,6 @@ export default function EditRawMaterialProduct() {
       </div>
     )
   }
-
-  const profitMargin = Number(form.watch('sellingPrice')) - Number(form.watch('buyingPrice'))
-  const profitPercentage =
-    Number(form.watch('buyingPrice')) > 0
-      ? ((profitMargin / Number(form.watch('buyingPrice'))) * 100).toFixed(1)
-      : 0
 
   return (
     <div className="space-y-6">
@@ -339,419 +360,70 @@ export default function EditRawMaterialProduct() {
         </Alert>
       )}
 
-      {/* Stock Overview Cards */}
-      <div className="grid gap-4 md:grid-cols-3">
-        {/* Current Stock (Meters) */}
-        <Card
-          className={`bg-card border-border ${
-            (product?.totalMeters || 0) < (product?.minStockLevel || 5)
-              ? 'border-red-500/50 ring-1 ring-red-500/20'
-              : hasSales
-                ? 'border-amber-500/50'
-                : 'border-amber-500/50 ring-1 ring-amber-500/20'
-          }`}
-        >
-          <CardHeader className="pb-3">
-            <CardTitle className="text-xs font-medium text-muted-foreground uppercase flex items-center gap-2">
-              <Ruler className="w-3 h-3 text-amber-500" />
-              Current Stock
-              {!hasSales && (
-                <Badge className="ml-auto bg-amber-500/10 text-amber-600 border-amber-500/20 text-[9px]">
-                  Editable
-                </Badge>
-              )}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-baseline gap-2">
-              <div className="text-3xl font-bold text-amber-600">
-                {(product?.totalMeters || 0).toFixed(1)}
-              </div>
-              <span className="text-muted-foreground text-sm">meters</span>
-            </div>
-            {calculatedUnits > 0 && (
-              <p className="text-xs text-muted-foreground mt-1">
-                ≈ {calculatedUnits} suits @ {Number(metersPerUnit)}m each
-              </p>
-            )}
-            {(product?.totalMeters || 0) < (product?.minStockLevel || 5) && (
-              <div className="flex items-center gap-1 mt-2 text-red-400 text-[10px] font-bold uppercase">
-                <AlertCircle className="w-3 h-3" />
-                Low stock warning
-              </div>
-            )}
-            {hasSales ? (
-              <>
-                <p className="text-xs text-muted-foreground mt-2">Locked - use Add Meters below</p>
-                <Button
-                  size="sm"
-                  className="w-full mt-3 bg-amber-500 hover:bg-amber-600 text-white"
-                  onClick={() => setShowRestock(true)}
-                >
-                  <PackagePlus className="w-3 h-3 mr-2" />
-                  Add Meters
-                </Button>
-              </>
-            ) : (
-              <p className="text-xs text-amber-600 mt-2 font-medium">✏️ Editable in form below</p>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Buying Price per Meter */}
-        <Card className="bg-card border-border">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-xs font-medium text-muted-foreground uppercase flex items-center gap-2">
-              <DollarSign className="w-3 h-3 text-blue-400" />
-              Cost per Meter
-              {!hasSales && (
-                <Badge className="ml-auto bg-amber-500/10 text-amber-600 border-amber-500/20 text-[9px]">
-                  Editable
-                </Badge>
-              )}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-400">
-              Rs. {Number(form.watch('buyingPrice') || 0).toLocaleString()}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {hasSales ? 'Locked' : 'Can be updated'}
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* Selling Price & Profit */}
-        <Card className="bg-card border-border">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-xs font-medium text-muted-foreground uppercase flex items-center gap-2">
-              <TrendingUp className="w-3 h-3 text-[#4ade80]" />
-              Retail per Meter
-              {!hasSales && (
-                <Badge className="ml-auto bg-amber-500/10 text-amber-600 border-amber-500/20 text-[9px]">
-                  Editable
-                </Badge>
-              )}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-[#4ade80]">
-              Rs. {Number(form.watch('sellingPrice') || 0).toLocaleString()}
-            </div>
-            {profitMargin > 0 && (
-              <p className="text-xs text-green-500 font-semibold mt-1">
-                +Rs. {profitMargin.toLocaleString()} ({profitPercentage}% margin)
-              </p>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      <Separator />
-
       {/* Form */}
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-          {/* Basic Information */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Package className="w-5 h-5" />
-                Basic Information
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="grid gap-4 md:grid-cols-2">
+          <BasicInformation
+            form={form}
+            categories={categories}
+            brands={brands}
+            productKind="RAW_MATERIAL"
+          />
+
+          <ClothDetails form={form} attributes={attributes} productKind="RAW_MATERIAL" />
+
+          <div className="bg-card border border-border rounded-lg p-6">
+            <h2 className="text-lg font-semibold mb-4 text-amber-600">Raw Material Stock</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <FormField
                 control={form.control}
-                name="name"
+                name="totalMeters"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Fabric Name *</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g., Premium Lawn Fabric" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="sku"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>SKU *</FormLabel>
-                    <FormControl>
-                      <Input placeholder="RAW-12345" {...field} />
-                    </FormControl>
-                    <FormDescription className="text-xs">Unique product identifier</FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="barcode"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Barcode</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Optional barcode" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="category"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Category</FormLabel>
-                    <SearchableSelect
-                      value={field.value}
-                      onValueChange={(value) => {
-                        field.onChange(value)
-                        loadSubcategories(value)
-                        form.setValue('subcategory', '')
-                      }}
-                      options={categories.map((cat) => ({
-                        label: cat.name,
-                        value: cat._id
-                      }))}
-                      placeholder="Select category"
-                      emptyText="No categories found"
-                    />
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="subcategory"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Subcategory</FormLabel>
-                    <SearchableSelect
-                      value={field.value}
-                      onValueChange={field.onChange}
-                      options={subcategories.map((sub) => ({
-                        label: sub.name,
-                        value: sub._id
-                      }))}
-                      placeholder="Select subcategory"
-                      emptyText="No subcategories"
-                      disabled={!subcategories.length}
-                    />
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="brand"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Brand</FormLabel>
-                    <SearchableSelect
-                      value={field.value}
-                      onValueChange={field.onChange}
-                      options={brands.map((brand) => ({
-                        label: brand.name,
-                        value: brand._id
-                      }))}
-                      placeholder="Select brand"
-                      emptyText="No brands found"
-                    />
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {/* ✅ NEW: Supplier Field - Only show if no sales */}
-              {!hasSales ? (
-                <FormField
-                  control={form.control}
-                  name="supplier"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="flex items-center gap-2">
-                        Supplier
-                        <Badge className="bg-amber-500/10 text-amber-600 border-amber-500/20 text-[9px]">
-                          Editable
-                        </Badge>
-                      </FormLabel>
-                      <SearchableSelect
-                        value={field.value}
-                        onValueChange={field.onChange}
-                        options={suppliers.map((sup) => ({
-                          label: sup.name,
-                          value: sup._id
-                        }))}
-                        placeholder="Select supplier"
-                        emptyText="No suppliers found"
-                      />
-                      <FormDescription className="text-xs">
-                        Correct supplier if wrong. Balance will be automatically adjusted.
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              ) : (
-                currentSupplier && (
-                  <div className="p-3 bg-muted rounded-lg border border-border">
-                    <p className="text-xs text-muted-foreground mb-1">Supplier (Locked)</p>
-                    <p className="text-sm font-medium">
-                      {typeof currentSupplier === 'string'
-                        ? currentSupplier
-                        : currentSupplier.name || 'Unknown'}
-                    </p>
-                    <p className="text-xs text-red-500 mt-1">🔒 Cannot be changed after sales</p>
-                  </div>
-                )
-              )}
-
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem className="md:col-span-2">
-                    <FormLabel>Description</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Fabric description..."
-                        className="min-h-[100px]"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </CardContent>
-          </Card>
-
-          {/* Pricing & Stock */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <DollarSign className="w-5 h-5" />
-                Pricing & Stock (Per Meter)
-                {hasSales && (
-                  <Badge variant="outline" className="ml-2 text-red-600 border-red-600">
-                    <Lock className="w-3 h-3 mr-1" />
-                    Locked
-                  </Badge>
-                )}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="grid gap-4 md:grid-cols-2">
-              <FormField
-                control={form.control}
-                name="buyingPrice"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Buying Price (per meter) *</FormLabel>
+                    <FormLabel>Total Meters *</FormLabel>
                     <FormControl>
                       <Input
-                        type="number"
-                        step="0.01"
-                        placeholder="0.00"
-                        disabled={hasSales}
                         {...field}
+                        type="number"
+                        step="0.1"
+                        min="0"
+                        disabled={hasSales}
+                        className="bg-muted border-border h-12"
+                        placeholder="e.g., 120"
                       />
                     </FormControl>
                     <FormDescription className="text-xs">
-                      {hasSales ? '🔒 Locked - sales exist' : '✏️ Cost price per meter'}
+                      {hasSales
+                        ? 'Locked - add meters using restock'
+                        : 'Total available meters in stock'}
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-
-              <FormField
-                control={form.control}
-                name="sellingPrice"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Selling Price (per meter) *</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        placeholder="0.00"
-                        disabled={hasSales}
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormDescription className="text-xs">
-                      {hasSales ? '🔒 Locked - sales exist' : '✏️ Retail price per meter'}
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {/* ✅ Total Meters - Editable only if no sales */}
-              {!hasSales && (
-                <FormField
-                  control={form.control}
-                  name="totalMeters"
-                  render={({ field }) => (
-                    <FormItem className="md:col-span-2">
-                      <FormLabel className="flex items-center gap-2">
-                        Total Meters in Stock *
-                        <Badge className="bg-amber-500/10 text-amber-600 border-amber-500/20 text-[9px]">
-                          Editable
-                        </Badge>
-                      </FormLabel>
-                      <FormControl>
-                        <Input type="number" step="0.1" placeholder="0.0" {...field} />
-                      </FormControl>
-                      <FormDescription className="text-xs">
-                        Correct any mistakes in total meters. Supplier balance will be automatically
-                        adjusted.
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              )}
-
-              {profitMargin > 0 && (
-                <div className="md:col-span-2 p-4 bg-green-500/10 border border-green-500/20 rounded-lg">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-green-600">Profit per Meter:</span>
-                    <span className="text-lg font-bold text-green-600">
-                      Rs. {profitMargin.toLocaleString()} ({profitPercentage}%)
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              {/* ✅ Meters Per Unit - Always editable (reference only) */}
               <FormField
                 control={form.control}
                 name="metersPerUnit"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Meters Per Suit (Reference)</FormLabel>
+                    <FormLabel>Meters per Suit (Optional)</FormLabel>
                     <FormControl>
-                      <Input type="number" step="0.1" placeholder="e.g., 4" {...field} />
+                      <Input
+                        {...field}
+                        type="number"
+                        step="0.1"
+                        min="0"
+                        className="bg-muted border-border h-12"
+                        placeholder="e.g., 4"
+                      />
                     </FormControl>
                     <FormDescription className="text-xs">
-                      How many meters needed for one complete suit
+                      Used only for reference when estimating suits.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-
               <FormField
                 control={form.control}
                 name="minStockLevel"
@@ -759,91 +431,75 @@ export default function EditRawMaterialProduct() {
                   <FormItem>
                     <FormLabel>Minimum Stock Alert (meters)</FormLabel>
                     <FormControl>
-                      <Input type="number" placeholder="5" {...field} />
+                      <Input
+                        {...field}
+                        type="number"
+                        min="0"
+                        className="bg-muted border-border h-12"
+                        placeholder="5"
+                      />
                     </FormControl>
-                    <FormDescription className="text-xs">
-                      Get notified when stock falls below this level
-                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-
               {calculatedUnits > 0 && (
-                <div className="md:col-span-2 p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg">
+                <div className="md:col-span-2 rounded-lg border border-amber-500/20 bg-amber-500/10 p-4">
                   <p className="text-sm text-amber-600 font-semibold">
                     📏 Current stock can make approximately {calculatedUnits} suits
-                    {!hasSales && ' (will update when you save)'}
                   </p>
                 </div>
               )}
-            </CardContent>
-          </Card>
+              {hasSales && (
+                <div className="md:col-span-2">
+                  <Button
+                    type="button"
+                    className="bg-amber-500 hover:bg-amber-600 text-white"
+                    onClick={() => setShowRestock(true)}
+                  >
+                    <PackagePlus className="w-4 h-4 mr-2" />
+                    Add Meters
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
 
-          {/* Additional Details */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Additional Details</CardTitle>
-            </CardHeader>
-            <CardContent className="grid gap-4 md:grid-cols-2">
-              <FormField
-                control={form.control}
-                name="color"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Color</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g., White, Beige" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+          <div className="bg-card border border-border rounded-lg p-6">
+            <h2 className="text-lg font-semibold mb-4">Description</h2>
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Fabric description..."
+                      className="min-h-[120px]"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
 
-              <FormField
-                control={form.control}
-                name="fabricType"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Fabric Type</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g., Lawn, Cotton" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+          <SupplierInventorySection
+            form={form}
+            currentStore={currentStore}
+            productKind="RAW_MATERIAL"
+            productId={id}
+            disablePricing={hasSales}
+            disableQuantity={hasSales}
+            disableSupplier={hasSales}
+          />
 
-              <FormField
-                control={form.control}
-                name="pattern"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Pattern</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g., 2-piece, 3-piece" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="designNumber"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Design Number</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g., D-001" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </CardContent>
-          </Card>
-
+          <div className="border rounded-lg p-4 bg-blue-500/10 border-blue-500/20">
+            <p className="text-sm text-blue-600 dark:text-blue-400">
+              💡 <strong>Note:</strong> Raw materials are tracked by meters.
+            </p>
+          </div>
           {/* Actions */}
           <div className="flex items-center justify-end gap-3 sticky bottom-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-4 border-t border-border rounded-lg">
             <Button

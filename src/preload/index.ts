@@ -24,6 +24,7 @@ const api = {
   },
   suppliers: {
     getAll: (params) => ipcRenderer.invoke('suppliers:getAll', params),
+    getByProductId: (params) => ipcRenderer.invoke('suppliers:getByProductId', params),
     getById: (id) => ipcRenderer.invoke('suppliers:getById', id),
     create: (data) => ipcRenderer.invoke('suppliers:create', data),
     update: (id, data) => ipcRenderer.invoke('suppliers:update', { id, data }),

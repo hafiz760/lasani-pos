@@ -1202,8 +1202,8 @@ export default function POSPage() {
                             variant="outline"
                             className={`h-12 px-3 text-xs sm:text-[11px] font-black leading-snug whitespace-normal border-2 transition-all duration-200 ${
                               field.value === method
-                                ? 'bg-[#4ade80] text-[#4ade80] border-[#4ade80] hover:bg-[#4ade80] hover:text-[#4ade80] hover:border-[#4ade80]'
-                                : 'bg-transparent text-foreground border-border hover:bg-muted'
+                                ? 'text-[#4ade80] border-[#4ade80] hover:bg-[#4ade80] hover:text-[#4ade80] hover:border-[#4ade80]'
+                                : 'text-foreground border-border hover:bg-muted'
                             }`}
                             onClick={() => {
                               field.onChange(method)

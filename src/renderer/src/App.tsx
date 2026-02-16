@@ -152,13 +152,9 @@ function App(): React.JSX.Element {
             <Route index element={<StoreDashboard />} />
             <Route path="pos" element={<POSPage />} />
             <Route path="inventory/products" element={<ProductsPage />} />
-            <Route path="/dashboard/inventory/products/:id/edit" element={<EditSimpleProduct />} />
-            <Route
-              path="/dashboard/inventory/products/:id/edit-raw"
-              element={<EditRawMaterialProduct />}
-            />
+            <Route path="inventory/products/:id/edit" element={<EditSimpleProduct />} />
+            <Route path="inventory/products/:id/edit-raw" element={<EditRawMaterialProduct />} />
             <Route path="inventory/products/create" element={<ProductFormPage />} />
-            <Route path="inventory/products/:id/edit" element={<ProductFormPage />} />
             <Route path="inventory/products/:id" element={<ProductDetails />} />
             <Route path="inventory/categories" element={<CategoriesPage />} />
             <Route path="inventory/brands" element={<BrandsPage />} />
@@ -199,7 +195,7 @@ function App(): React.JSX.Element {
           />
         </Routes>
       </HashRouter>
-      <Toaster position="top-right" />
+      <Toaster position="bottom-right" />
     </>
   )
 }

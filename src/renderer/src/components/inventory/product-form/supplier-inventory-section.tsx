@@ -33,7 +33,11 @@ import { Form } from '@renderer/components/ui/form'
 interface SupplierInventorySectionProps {
   form: any
   currentStore: any
-  productKind: 'SIMPLE' | 'RAW_MATERIAL' | 'COMBO_SET'
+  productKind: 'SIMPLE' | 'RAW_MATERIAL'
+  productId?: string
+  disablePricing?: boolean
+  disableQuantity?: boolean
+  disableSupplier?: boolean
 }
 
 const supplierSchema = z.object({
@@ -51,30 +55,55 @@ type SupplierFormValues = z.infer<typeof supplierSchema>
 export function SupplierInventorySection({
   form,
   currentStore,
-  productKind
+  productKind,
+  productId,
+  disablePricing = false,
+  disableQuantity = false,
+  disableSupplier = false
 }: SupplierInventorySectionProps) {
   const [suppliers, setSuppliers] = useState<any[]>([])
   const [isLoadingSuppliers, setIsLoadingSuppliers] = useState(false)
   const [isAddSupplierOpen, setIsAddSupplierOpen] = useState(false)
   const [isSupplierSubmitting, setIsSupplierSubmitting] = useState(false)
+  const [hasResolvedSupplier, setHasResolvedSupplier] = useState(false)
 
   const isRawMaterial = productKind === 'RAW_MATERIAL'
-  const isComboSet = productKind === 'COMBO_SET'
   const buyingPrice = form.watch('buyingPrice') || 0
   const sellingPrice = form.watch('sellingPrice') || 0
+  const normalizeId = (value: any) => {
+    if (!value) return ''
+    if (typeof value === 'string') {
+      return value === '[object Object]' ? '' : value
+    }
+    if (typeof value === 'object') {
+      if (value.$oid) return String(value.$oid)
+      if (value.id) return String(value.id)
+      if (value._id?.$oid) return String(value._id.$oid)
+      if (value._id) return String(value._id)
+      if (value.value?.$oid) return String(value.value.$oid)
+      if (value.value?._id?.$oid) return String(value.value._id.$oid)
+      if (value.value?._id) return String(value.value._id)
+      if (value.value) return String(value.value)
+      if (value.supplierId) return String(value.supplierId)
+    }
+    const stringValue = String(value)
+    return stringValue === '[object Object]' ? '' : stringValue
+  }
+
+  const selectedSupplier = form.watch('supplier')
+  const selectedSupplierId = normalizeId(selectedSupplier)
 
   // Get quantity based on product type
   let quantity = 0
   let unitLabel = 'pcs'
 
   if (isRawMaterial) {
-    quantity = form.watch('totalMeters') || 0
+    const rawMeters = form.watch('totalMeters')
+    quantity = rawMeters === '' || rawMeters === undefined ? 0 : Number(rawMeters) || 0
     unitLabel = 'meters'
-  } else if (isComboSet) {
-    quantity = form.watch('initialQuantity') || 0
-    unitLabel = 'sets'
   } else {
-    quantity = form.watch('initialQuantity') || 0
+    const rawQty = form.watch('initialQuantity')
+    quantity = rawQty === '' || rawQty === undefined ? 0 : Number(rawQty) || 0
     unitLabel = 'pcs'
   }
 
@@ -85,6 +114,42 @@ export function SupplierInventorySection({
   useEffect(() => {
     loadSuppliers()
   }, [currentStore?._id])
+
+  useEffect(() => {
+    if (!selectedSupplier) return
+    const selectedId = normalizeId(selectedSupplier)
+    if (!selectedId) {
+      form.setValue('supplier', '')
+      return
+    }
+    const hasMatch = suppliers.some((supplier) => normalizeId(supplier._id) === selectedId)
+    if (!hasMatch && selectedId && currentStore?._id && !hasResolvedSupplier) {
+      resolveSupplierById(selectedId)
+      return
+    }
+    if (!hasMatch && selectedId) return
+    if (selectedId && selectedId !== selectedSupplier) {
+      form.setValue('supplier', selectedId, { shouldDirty: true, shouldValidate: true })
+    }
+  }, [selectedSupplier, suppliers, form, productId, currentStore?._id, hasResolvedSupplier])
+
+  useEffect(() => {
+    if (!selectedSupplierId || suppliers.length === 0) return
+    const hasMatch = suppliers.some((supplier) => normalizeId(supplier._id) === selectedSupplierId)
+    if (hasMatch) {
+      form.setValue('supplier', selectedSupplierId, { shouldDirty: false, shouldValidate: true })
+    }
+    console.log('Supplier select state:', {
+      selectedSupplierId,
+      hasMatch,
+      supplierIds: suppliers.map((supplier) => normalizeId(supplier._id))
+    })
+  }, [selectedSupplierId, suppliers, form])
+
+  useEffect(() => {
+    if (selectedSupplier || !productId || !currentStore?._id || hasResolvedSupplier) return
+    resolveSupplierByProduct()
+  }, [selectedSupplier, productId, currentStore?._id, hasResolvedSupplier])
 
   const supplierForm = useForm<SupplierFormValues>({
     resolver: zodResolver(supplierSchema) as any,
@@ -118,6 +183,45 @@ export function SupplierInventorySection({
     }
   }
 
+  const resolveSupplierByProduct = async () => {
+    if (!productId || !currentStore?._id || hasResolvedSupplier) return
+    setHasResolvedSupplier(true)
+    try {
+      const result = await window.api.suppliers.getByProductId({
+        storeId: currentStore._id,
+        productId
+      })
+      if (result.success && result.data?._id) {
+        addResolvedSupplier(result.data)
+      }
+    } catch (error) {
+      console.error('Failed to resolve supplier by product:', error)
+    }
+  }
+
+  const resolveSupplierById = async (supplierId: string) => {
+    if (!supplierId || hasResolvedSupplier) return
+    setHasResolvedSupplier(true)
+    try {
+      const result = await window.api.suppliers.getById(supplierId)
+      if (result.success && result.data?._id) {
+        addResolvedSupplier(result.data)
+      }
+    } catch (error) {
+      console.error('Failed to resolve supplier by id:', error)
+    }
+  }
+
+  const addResolvedSupplier = (supplier: any) => {
+    const supplierId = normalizeId(supplier?._id)
+    if (!supplierId) return
+    setSuppliers((prev) => {
+      const exists = prev.some((item) => normalizeId(item._id) === supplierId)
+      return exists ? prev : [supplier, ...prev]
+    })
+    form.setValue('supplier', supplierId, { shouldDirty: true, shouldValidate: true })
+  }
+
   const onSupplierSubmit: SubmitHandler<SupplierFormValues> = async (values) => {
     if (!currentStore?._id) return
     setIsSupplierSubmitting(true)
@@ -129,7 +233,10 @@ export function SupplierInventorySection({
       if (result.success) {
         toast.success('Supplier created successfully')
         setSuppliers((prev) => [result.data, ...prev])
-        form.setValue('supplier', result.data._id)
+        form.setValue('supplier', String(result.data._id), {
+          shouldDirty: true,
+          shouldValidate: true
+        })
         supplierForm.reset()
         setIsAddSupplierOpen(false)
       } else {
@@ -152,8 +259,9 @@ export function SupplierInventorySection({
         <Button
           type="button"
           variant="outline"
-          className="h-10 border-blue-500/20 bg-black"
+          className="h-10 border-blue-500/2"
           onClick={() => setIsAddSupplierOpen(true)}
+          disabled={disableSupplier}
         >
           Add Supplier
         </Button>
@@ -170,8 +278,8 @@ export function SupplierInventorySection({
               <div className="flex flex-col gap-2">
                 <Select
                   onValueChange={field.onChange}
-                  value={field.value}
-                  disabled={isLoadingSuppliers}
+                  value={selectedSupplierId || ''}
+                  disabled={isLoadingSuppliers || disableSupplier}
                 >
                   <FormControl>
                     <SelectTrigger className="bg-background border-blue-500/20 h-12">
@@ -179,21 +287,29 @@ export function SupplierInventorySection({
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent className="bg-popover border-border">
-                    {suppliers.map((supplier) => (
-                      <SelectItem key={supplier._id} value={supplier._id}>
-                        {supplier.name}
-                        {supplier.currentBalance > 0 && (
-                          <span className="ml-2 text-xs text-red-400">
-                            (Balance: Rs. {supplier.currentBalance.toLocaleString()})
-                          </span>
-                        )}
-                      </SelectItem>
-                    ))}
+                    {suppliers.map((supplier) => {
+                      const supplierId = normalizeId(supplier._id)
+                      if (!supplierId) return null
+                      return (
+                        <SelectItem key={supplierId} value={supplierId}>
+                          {supplier.name}
+                          {supplier.currentBalance > 0 && (
+                            <span className="ml-2 text-xs text-red-400">
+                              (Balance: Rs. {supplier.currentBalance.toLocaleString()})
+                            </span>
+                          )}
+                        </SelectItem>
+                      )
+                    })}
                   </SelectContent>
                 </Select>
               </div>
               <FormMessage />
-              <p className="text-xs text-muted-foreground mt-1">Select supplier to track balance</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                {disableSupplier
+                  ? 'Supplier locked due to sales activity'
+                  : 'Select supplier to track balance'}
+              </p>
             </FormItem>
           )}
         />
@@ -205,9 +321,7 @@ export function SupplierInventorySection({
             name="buyingPrice"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>
-                  Buying Price (per {isRawMaterial ? 'Meter' : isComboSet ? 'Set' : 'Unit'}) *
-                </FormLabel>
+                <FormLabel>Buying Price (per {isRawMaterial ? 'Meter' : 'Unit'}) *</FormLabel>
                 <FormControl>
                   <Input
                     type="number"
@@ -218,14 +332,16 @@ export function SupplierInventorySection({
                       const val = e.target.value
                       field.onChange(val === '' ? '' : parseFloat(val) || '')
                     }}
+                    disabled={disablePricing}
                     className="bg-background border-blue-500/20 h-12 text-lg font-semibold"
                     placeholder="e.g., 150.00"
                   />
                 </FormControl>
                 <FormMessage />
                 <p className="text-xs text-muted-foreground mt-1">
-                  Cost price per{' '}
-                  {unitLabel === 'meters' ? 'meter' : unitLabel === 'sets' ? 'set' : 'piece'}
+                  {disablePricing
+                    ? 'Price locked due to sales activity'
+                    : `Cost price per ${unitLabel === 'meters' ? 'meter' : 'piece'}`}
                 </p>
               </FormItem>
             )}
@@ -236,9 +352,7 @@ export function SupplierInventorySection({
             name="sellingPrice"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>
-                  Selling Price (per {isRawMaterial ? 'Meter' : isComboSet ? 'Set' : 'Unit'}) *
-                </FormLabel>
+                <FormLabel>Selling Price (per {isRawMaterial ? 'Meter' : 'Unit'}) *</FormLabel>
                 <FormControl>
                   <Input
                     type="number"
@@ -249,28 +363,30 @@ export function SupplierInventorySection({
                       const val = e.target.value
                       field.onChange(val === '' ? '' : parseFloat(val) || '')
                     }}
+                    disabled={disablePricing}
                     className="bg-background border-blue-500/20 h-12 text-lg font-semibold"
                     placeholder="e.g., 200.00"
                   />
                 </FormControl>
                 <FormMessage />
                 <p className="text-xs text-muted-foreground mt-1">
-                  Selling price per{' '}
-                  {unitLabel === 'meters' ? 'meter' : unitLabel === 'sets' ? 'set' : 'piece'}
+                  {disablePricing
+                    ? 'Price locked due to sales activity'
+                    : `Selling price per ${unitLabel === 'meters' ? 'meter' : 'piece'}`}
                 </p>
               </FormItem>
             )}
           />
         </div>
 
-        {/* Row 3: Initial Quantity (Only for SIMPLE and COMBO_SET) */}
+        {/* Row 3: Initial Quantity (Only for SIMPLE) */}
         {!isRawMaterial && (
           <FormField
             control={form.control}
             name="initialQuantity"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Initial Quantity ({isComboSet ? 'Sets' : 'Pieces'}) *</FormLabel>
+                <FormLabel>Initial Quantity (Pieces) *</FormLabel>
                 <FormControl>
                   <Input
                     type="number"
@@ -281,13 +397,16 @@ export function SupplierInventorySection({
                       const val = e.target.value
                       field.onChange(val === '' ? '' : parseInt(val) || '')
                     }}
+                    disabled={disableQuantity}
                     className="bg-background border-blue-500/20 h-12 text-lg font-semibold"
                     placeholder="e.g., 10"
                   />
                 </FormControl>
                 <FormMessage />
                 <p className="text-xs text-muted-foreground mt-1">
-                  How many {isComboSet ? 'sets' : 'pieces'} are you adding to stock?
+                  {disableQuantity
+                    ? 'Quantity locked due to sales activity'
+                    : 'How many pieces are you adding to stock?'}
                 </p>
               </FormItem>
             )}
@@ -310,7 +429,7 @@ export function SupplierInventorySection({
               <p className="text-xs text-muted-foreground mb-1">Buying Price</p>
               <p className="text-xl font-bold text-blue-600">Rs. {buyingPrice.toLocaleString()}</p>
               <p className="text-xs text-muted-foreground">
-                per {unitLabel === 'meters' ? 'meter' : unitLabel === 'sets' ? 'set' : 'unit'}
+                per {unitLabel === 'meters' ? 'meter' : 'unit'}
               </p>
             </div>
 

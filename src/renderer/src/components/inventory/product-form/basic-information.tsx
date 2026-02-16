@@ -12,7 +12,7 @@ interface BasicInformationProps {
   form: any
   categories: any[]
   brands: any[]
-  productKind: 'SIMPLE' | 'RAW_MATERIAL' | 'COMBO_SET'
+  productKind: 'SIMPLE' | 'RAW_MATERIAL'
 }
 
 export function BasicInformation({ form, categories, brands, productKind }: BasicInformationProps) {
@@ -32,7 +32,7 @@ export function BasicInformation({ form, categories, brands, productKind }: Basi
                 <Input
                   {...field}
                   className="bg-muted border-border h-12"
-                  placeholder="e.g., Premium Cotton Shirt"
+                  placeholder="e.g., Lawn Suit"
                 />
               </FormControl>
               <FormMessage />
@@ -68,10 +68,7 @@ export function BasicInformation({ form, categories, brands, productKind }: Basi
                 <FormControl>
                   <SearchableDropdown
                     value={field.value}
-                    onChange={(val) => {
-                      field.onChange(val)
-                      form.setValue('subcategory', '')
-                    }}
+                    onChange={field.onChange}
                     options={categories
                       .filter((c) => !c.parent)
                       .map((c) => ({ label: c.name, value: c._id }))}
@@ -83,26 +80,18 @@ export function BasicInformation({ form, categories, brands, productKind }: Basi
               </FormItem>
             )}
           />
-
           <FormField
             control={form.control}
-            name="subcategory"
+            name="brand"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Subcategory</FormLabel>
+                <FormLabel>Brand</FormLabel>
                 <FormControl>
                   <SearchableDropdown
                     value={field.value || ''}
                     onChange={field.onChange}
-                    options={categories
-                      .filter(
-                        (c) =>
-                          c.parent?._id === form.getValues('category') ||
-                          c.parent === form.getValues('category')
-                      )
-                      .map((c) => ({ label: c.name, value: c._id }))}
-                    placeholder="Select Subcategory"
-                    disabled={!form.watch('category')}
+                    options={brands.map((b) => ({ label: b.name, value: b._id }))}
+                    placeholder="Select Brand"
                   />
                 </FormControl>
                 <FormMessage />
@@ -110,26 +99,6 @@ export function BasicInformation({ form, categories, brands, productKind }: Basi
             )}
           />
         </div>
-
-        <FormField
-          control={form.control}
-          name="brand"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Brand</FormLabel>
-              <FormControl>
-                <SearchableDropdown
-                  value={field.value || ''}
-                  onChange={field.onChange}
-                  options={brands.map((b) => ({ label: b.name, value: b._id }))}
-                  placeholder="Select Brand"
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
         {isSimple && (
           <FormField
             control={form.control}

@@ -308,7 +308,7 @@ export default function SalesDetailPage() {
           <Badge className={`${statusTone(sale.paymentStatus)} border-0`}>
             {sale.paymentStatus}
           </Badge>
-          <Button
+          {/* <Button
             variant="outline"
             className="border-border"
             onClick={openRefund}
@@ -316,7 +316,7 @@ export default function SalesDetailPage() {
           >
             <RotateCcw className="h-4 w-4 mr-2" />
             Refund
-          </Button>
+          </Button> */}
           <Button variant="outline" className="border-border" onClick={handlePrint}>
             <Printer className="h-4 w-4 mr-2" />
             Print
