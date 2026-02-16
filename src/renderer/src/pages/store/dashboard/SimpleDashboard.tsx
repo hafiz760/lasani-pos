@@ -7,7 +7,13 @@ import {
   AlertTriangle,
   Store,
   TrendingUp,
-  Search
+  Search,
+  DollarSign,
+  FileText,
+  Receipt,
+  Landmark,
+  TrendingDown,
+  ArrowRight
 } from 'lucide-react'
 import { Card, CardContent } from '@renderer/components/ui/card'
 import { Button } from '@renderer/components/ui/button'
@@ -46,16 +52,28 @@ export default function SimpleDashboard({ stats }: SimpleDashboardProps) {
       href: '/dashboard/pos'
     },
     {
-      title: 'Inventory',
-      description: 'Check stock levels',
-      icon: Package,
-      href: '/dashboard/inventory/products'
+      title: 'View Reports',
+      description: 'Business insights',
+      icon: FileText,
+      href: '/dashboard/accounting/transactions/preview'
+    },
+    {
+      title: 'Transactions',
+      description: 'View all transactions',
+      icon: Receipt,
+      href: '/dashboard/accounting/transactions'
     },
     {
       title: 'Sales History',
       description: 'Review recent orders',
       icon: History,
       href: '/dashboard/reports/sales'
+    },
+    {
+      title: 'Inventory',
+      description: 'Check stock levels',
+      icon: Package,
+      href: '/dashboard/inventory/products'
     },
     {
       title: 'Find Product',
@@ -77,12 +95,30 @@ export default function SimpleDashboard({ stats }: SimpleDashboardProps) {
         <motion.div variants={item} className="h-full">
           <Card className="bg-card border-border h-full hover:border-[#4ade80]/50 transition-colors">
             <CardContent className="p-6 flex items-center gap-4 h-full">
+              <div className="h-12 w-12 rounded-xl bg-emerald-500/10 flex items-center justify-center shrink-0">
+                <DollarSign className="h-6 w-6 text-emerald-500" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Today's Revenue</p>
+                <h3 className="text-2xl font-bold text-emerald-600">
+                  Rs. {(stats?.totalRevenue || 0).toLocaleString()}
+                </h3>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        <motion.div variants={item} className="h-full">
+          <Card className="bg-card border-border h-full hover:border-[#4ade80]/50 transition-colors">
+            <CardContent className="p-6 flex items-center gap-4 h-full">
               <div className="h-12 w-12 rounded-xl bg-[#4ade80]/10 flex items-center justify-center shrink-0">
                 <TrendingUp className="h-6 w-6 text-[#4ade80]" />
               </div>
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Today's Sales</p>
-                <h3 className="text-2xl font-bold">{stats?.salesCount || 0} Transactions</h3>
+                <p className="text-sm font-medium text-muted-foreground">Today's Profit</p>
+                <h3 className="text-2xl font-bold text-[#16a34a]">
+                  Rs. {(stats?.totalProfit || 0).toLocaleString()}
+                </h3>
               </div>
             </CardContent>
           </Card>
@@ -144,50 +180,6 @@ export default function SimpleDashboard({ stats }: SimpleDashboardProps) {
           ))}
         </div>
       </div>
-
-      {/* Activity Section - Minimalist */}
-      <Card className="bg-card border-border rounded-2xl overflow-hidden">
-        <div className="px-6 py-4 border-b border-border flex items-center justify-between">
-          <h3 className="font-bold">Recent Activity</h3>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate('/dashboard/reports/sales')}
-            className="text-[#4ade80] hover:text-[#4ade80] hover:bg-[#4ade80]/10"
-          >
-            View All
-          </Button>
-        </div>
-        <CardContent className="p-0">
-          <div className="divide-y divide-border">
-            {stats?.recentSales?.slice(0, 3).map((sale: any, i: number) => (
-              <div
-                key={i}
-                className="flex items-center px-6 py-4 hover:bg-muted/30 transition-colors"
-              >
-                <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center mr-4">
-                  <ShoppingCart className="h-4 w-4 text-muted-foreground" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium">Sale #{sale.invoiceNo || i + 1}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {format(new Date(sale.createdAt), 'hh:mm a')} • {sale.paymentMethod}
-                    {sale.paymentChannel ? ` • ${sale.paymentChannel}` : ''}
-                  </p>
-                </div>
-                <div className="text-right">
-                  <span className="text-sm font-semibold text-[#4ade80]">{sale.paymentStatus}</span>
-                </div>
-              </div>
-            ))}
-            {(!stats?.recentSales || stats.recentSales.length === 0) && (
-              <div className="p-10 text-center text-muted-foreground italic text-sm">
-                No transactions today.
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
     </div>
   )
 }

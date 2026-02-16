@@ -2242,6 +2242,24 @@ export function registerIpcHandlers() {
         .lean()
 
       if (!sale) return { success: false, error: 'Sale not found' }
+
+      // Populate product details (productKind, baseUnit) for each item
+      if (sale.items && sale.items.length > 0) {
+        for (let i = 0; i < sale.items.length; i++) {
+          const item = sale.items[i] as any
+          if (item.product) {
+            const product = await models.Product.findById(item.product)
+              .select('productKind baseUnit sellByUnit')
+              .lean()
+            if (product) {
+              item.productKind = product.productKind
+              item.baseUnit = product.baseUnit || 'pcs'
+              item.sellByUnit = product.sellByUnit || 'pcs'
+            }
+          }
+        }
+      }
+
       return toJSON({ success: true, data: sale })
     } catch (error: any) {
       return { success: false, error: error.message }

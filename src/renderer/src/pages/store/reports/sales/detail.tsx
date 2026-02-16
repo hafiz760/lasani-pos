@@ -39,6 +39,9 @@ interface SaleItem {
   sellingPrice?: number
   price?: number
   totalAmount: number
+  productKind?: 'SIMPLE' | 'RAW_MATERIAL' | 'COMBO_SET'
+  baseUnit?: string
+  sellByUnit?: string
 }
 
 interface PaymentRecord {
@@ -155,6 +158,14 @@ export default function SalesDetailPage() {
   }
 
   const formatCurrency = (value?: number) => `Rs. ${Number(value || 0).toLocaleString()}`
+
+  // Helper to get the correct unit label for a product
+  const getUnitLabel = (item: SaleItem) => {
+    if (item.productKind === 'RAW_MATERIAL') {
+      return item.baseUnit || 'meter'
+    }
+    return item.baseUnit || 'pcs'
+  }
 
   const handlePrint = () => {
     if (!sale) return
@@ -308,7 +319,7 @@ export default function SalesDetailPage() {
           <Badge className={`${statusTone(sale.paymentStatus)} border-0`}>
             {sale.paymentStatus}
           </Badge>
-          {/* <Button
+          <Button
             variant="outline"
             className="border-border"
             onClick={openRefund}
@@ -316,7 +327,7 @@ export default function SalesDetailPage() {
           >
             <RotateCcw className="h-4 w-4 mr-2" />
             Refund
-          </Button> */}
+          </Button>
           <Button variant="outline" className="border-border" onClick={handlePrint}>
             <Printer className="h-4 w-4 mr-2" />
             Print
@@ -435,7 +446,7 @@ export default function SalesDetailPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Product</TableHead>
-                <TableHead className="text-center">Qty</TableHead>
+                <TableHead className="text-center">Quantity</TableHead>
                 <TableHead className="text-right">Price</TableHead>
                 <TableHead className="text-right">Total</TableHead>
               </TableRow>
@@ -444,7 +455,9 @@ export default function SalesDetailPage() {
               {sale.items?.map((item, idx) => (
                 <TableRow key={idx}>
                   <TableCell>{item.productName || item.product?.name || '-'}</TableCell>
-                  <TableCell className="text-center">{item.quantity}</TableCell>
+                  <TableCell className="text-center">
+                    {item.quantity} {getUnitLabel(item)}
+                  </TableCell>
                   <TableCell className="text-right font-mono">
                     {formatCurrency(item.sellingPrice || item.price || 0)}
                   </TableCell>
@@ -505,96 +518,246 @@ export default function SalesDetailPage() {
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Date</TableHead>
-                <TableHead>Method</TableHead>
-                <TableHead>Reason</TableHead>
-                <TableHead className="text-right">Amount</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {sale.refundHistory?.length ? (
-                sale.refundHistory.map((record, idx) => (
-                  <TableRow key={idx}>
-                    <TableCell>{format(new Date(record.date), 'MMM dd, yyyy HH:mm')}</TableCell>
-                    <TableCell>{record.method}</TableCell>
-                    <TableCell>{record.reason || '—'}</TableCell>
-                    <TableCell className="text-right font-mono">
-                      {formatCurrency(record.amount)}
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={4} className="text-center text-muted-foreground py-10">
-                    No refunds recorded.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
+          {sale.refundHistory?.length ? (
+            <div className="divide-y divide-border">
+              {sale.refundHistory.map((record, idx) => (
+                <div key={idx} className="p-4 hover:bg-muted/50 transition-colors">
+                  <div className="flex items-start justify-between gap-4 mb-3">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <RotateCcw className="h-4 w-4 text-red-500" />
+                        <span className="font-semibold">
+                          {format(new Date(record.date), 'MMM dd, yyyy HH:mm')}
+                        </span>
+                        <Badge className="bg-red-500/10 text-red-600 border-0 text-xs">
+                          {record.method}
+                        </Badge>
+                      </div>
+                      {record.reason && (
+                        <p className="text-sm text-muted-foreground mt-1">
+                          <span className="font-medium">Reason:</span> {record.reason}
+                        </p>
+                      )}
+                    </div>
+                    <div className="text-right">
+                      <div className="text-lg font-black text-red-500">
+                        -{formatCurrency(record.amount)}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Refunded Items */}
+                  {record.items && record.items.length > 0 && (
+                    <div className="mt-3 pt-3 border-t border-border">
+                      <div className="text-xs uppercase font-semibold text-muted-foreground mb-2">
+                        Refunded Items
+                      </div>
+                      <div className="space-y-1">
+                        {record.items.map((item: any, itemIdx: number) => {
+                          const saleItem = sale.items.find(
+                            (si: any) => String(si.product) === String(item.product)
+                          )
+                          return (
+                            <div
+                              key={itemIdx}
+                              className="flex items-center justify-between text-sm bg-muted/50 rounded px-3 py-2"
+                            >
+                              <span className="text-muted-foreground">
+                                {saleItem?.productName ||
+                                  saleItem?.product?.name ||
+                                  'Unknown Product'}
+                              </span>
+                              <div className="flex items-center gap-3">
+                                <span className="text-xs text-muted-foreground">
+                                  {saleItem?.productKind === 'RAW_MATERIAL' ? 'Meters' : 'Qty'}:{' '}
+                                  {item.quantity}
+                                </span>
+                                <span className="font-semibold">{formatCurrency(item.amount)}</span>
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center text-muted-foreground py-10">
+              <RotateCcw className="h-12 w-12 mx-auto mb-2 opacity-20" />
+              <p>No refunds recorded.</p>
+            </div>
+          )}
         </CardContent>
       </Card>
 
       <Dialog open={isRefundOpen} onOpenChange={setIsRefundOpen}>
-        <DialogContent className="bg-background border-border text-foreground sm:max-w-2xl">
+        <DialogContent className="bg-background border-border text-foreground sm:max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Process Refund</DialogTitle>
+            <DialogTitle className="text-xl font-black">Process Refund</DialogTitle>
+            <p className="text-sm text-muted-foreground">
+              Select items to refund and specify quantities
+            </p>
           </DialogHeader>
-          <div className="space-y-4 py-2">
-            <div className="text-xs uppercase text-muted-foreground">
-              Refundable Amount: {formatCurrency(refundableAmount)}
-            </div>
-            <div className="border border-border rounded-lg overflow-hidden">
-              <table className="w-full text-sm">
-                <thead className="bg-muted text-muted-foreground">
-                  <tr>
-                    <th className="px-4 py-2 text-left">Item</th>
-                    <th className="px-4 py-2 text-center">Sold</th>
-                    <th className="px-4 py-2 text-center">Available</th>
-                    <th className="px-4 py-2 text-right">Refund Qty</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {sale.items.map((item: any, idx: number) => {
-                    const key = String(item.product)
-                    const refundedQty = refundedQtyByProduct.get(key) || 0
-                    const available = Math.max(0, item.quantity - refundedQty)
-                    return (
-                      <tr key={idx}>
-                        <td className="px-4 py-2">{item.productName || item.product?.name}</td>
-                        <td className="px-4 py-2 text-center">{item.quantity}</td>
-                        <td className="px-4 py-2 text-center">{available}</td>
-                        <td className="px-4 py-2 text-right">
-                          <Input
-                            type="number"
-                            min={0}
-                            max={available}
-                            value={refundItems[key] || ''}
-                            onChange={(e) => {
-                              const next = Number(e.target.value || 0)
-                              setRefundItems((prev) => ({
-                                ...prev,
-                                [key]: Math.min(available, Math.max(0, next))
-                              }))
-                            }}
-                            className="w-24 text-right"
-                          />
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
+
+          <div className="space-y-6 py-4">
+            {/* Refund Progress Indicator */}
+            <Card className="border-border bg-muted/50">
+              <CardContent className="p-4">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-sm font-semibold text-muted-foreground">Refund Amount</span>
+                  <span className="text-lg font-black">
+                    {formatCurrency(refundTotal)} / {formatCurrency(refundableAmount)}
+                  </span>
+                </div>
+                <div className="w-full bg-border rounded-full h-2 overflow-hidden">
+                  <div
+                    className={`h-full transition-all duration-300 ${
+                      refundTotal > refundableAmount
+                        ? 'bg-red-500'
+                        : refundTotal > 0
+                          ? 'bg-[#4ade80]'
+                          : 'bg-muted'
+                    }`}
+                    style={{
+                      width: `${Math.min(100, (refundTotal / Math.max(1, refundableAmount)) * 100)}%`
+                    }}
+                  />
+                </div>
+                {refundTotal > refundableAmount && (
+                  <p className="text-xs text-red-500 mt-1">
+                    ⚠️ Refund amount exceeds refundable amount
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Items Selection */}
+            <div className="space-y-3">
+              <h3 className="text-sm font-black uppercase tracking-widest text-muted-foreground">
+                Select Items to Refund
+              </h3>
+              <div className="space-y-2">
+                {sale.items.map((item: any, idx: number) => {
+                  const key = String(item.product)
+                  const refundedQty = refundedQtyByProduct.get(key) || 0
+                  const available = Math.max(0, item.quantity - refundedQty)
+                  const currentRefundQty = refundItems[key] || 0
+                  const itemRefundAmount = (item.sellingPrice || item.price || 0) * currentRefundQty
+
+                  return (
+                    <Card
+                      key={idx}
+                      className={`border transition-all ${
+                        currentRefundQty > 0 ? 'border-[#4ade80] bg-[#4ade80]/5' : 'border-border'
+                      }`}
+                    >
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between gap-4">
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-semibold truncate">
+                              {item.productName || item.product?.name}
+                            </h4>
+                            <div className="flex items-center gap-4 mt-1 text-sm text-muted-foreground">
+                              <span>
+                                Sold: {item.quantity} {getUnitLabel(item)}
+                              </span>
+                              <span>•</span>
+                              <span>
+                                Available: {available} {getUnitLabel(item)}
+                              </span>
+                              <span>•</span>
+                              <span>
+                                Price: {formatCurrency(item.sellingPrice || item.price || 0)}
+                              </span>
+                            </div>
+                            {refundedQty > 0 && (
+                              <div className="text-xs text-amber-600 mt-1">
+                                Already refunded: {refundedQty} {getUnitLabel(item)}
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-3">
+                            {currentRefundQty > 0 && (
+                              <div className="text-right">
+                                <div className="text-sm font-semibold text-[#4ade80]">
+                                  {formatCurrency(itemRefundAmount)}
+                                </div>
+                                <div className="text-xs text-muted-foreground">Refund amount</div>
+                              </div>
+                            )}
+                            <div className="flex flex-col items-end gap-1">
+                              <Label className="text-xs text-muted-foreground">
+                                {item.productKind === 'RAW_MATERIAL' ? 'Meters' : 'Qty'}
+                              </Label>
+                              <Input
+                                type="number"
+                                min={0}
+                                max={available}
+                                value={refundItems[key] || ''}
+                                onChange={(e) => {
+                                  const next = Number(e.target.value || 0)
+                                  setRefundItems((prev) => ({
+                                    ...prev,
+                                    [key]: Math.min(available, Math.max(0, next))
+                                  }))
+                                }}
+                                className="w-20 text-center font-semibold"
+                                placeholder="0"
+                                disabled={available === 0}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )
+                })}
+              </div>
             </div>
 
+            {/* Refund Summary */}
+            {refundTotal > 0 && (
+              <Card className="border-[#4ade80] bg-[#4ade80]/5">
+                <CardContent className="p-4">
+                  <h3 className="text-sm font-black uppercase tracking-widest text-muted-foreground mb-3">
+                    Refund Summary
+                  </h3>
+                  <div className="space-y-2">
+                    {sale.items
+                      .filter((item: any) => {
+                        const key = String(item.product)
+                        return (refundItems[key] || 0) > 0
+                      })
+                      .map((item: any, idx: number) => {
+                        const key = String(item.product)
+                        const qty = refundItems[key]
+                        const amount = (item.sellingPrice || item.price || 0) * qty
+                        return (
+                          <div key={idx} className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">
+                              {item.productName || item.product?.name} × {qty} {getUnitLabel(item)}
+                            </span>
+                            <span className="font-semibold">{formatCurrency(amount)}</span>
+                          </div>
+                        )
+                      })}
+                    <div className="border-t border-border pt-2 flex justify-between text-base font-black">
+                      <span>Total Refund</span>
+                      <span className="text-[#4ade80]">{formatCurrency(refundTotal)}</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Refund Details */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label>Refund Method</Label>
+                <Label className="text-sm font-semibold">Refund Method *</Label>
                 <Select value={refundMethod} onValueChange={setRefundMethod}>
-                  <SelectTrigger className="bg-muted border-border">
+                  <SelectTrigger className="bg-muted border-border mt-1">
                     <SelectValue placeholder="Select method" />
                   </SelectTrigger>
                   <SelectContent className="bg-popover border-border text-popover-foreground">
@@ -604,21 +767,23 @@ export default function SalesDetailPage() {
                 </Select>
               </div>
               <div>
-                <Label>Reason (optional)</Label>
+                <Label className="text-sm font-semibold">Reason (optional)</Label>
                 <Input
                   value={refundReason}
                   onChange={(e) => setRefundReason(e.target.value)}
-                  className="bg-muted border-border"
-                  placeholder="Reason for refund"
+                  className="bg-muted border-border mt-1"
+                  placeholder="e.g., Defective product, Wrong size"
                 />
               </div>
             </div>
           </div>
+
           <DialogFooter className="gap-2 sm:gap-0">
             <Button
               variant="outline"
               onClick={() => setIsRefundOpen(false)}
               className="border-border"
+              disabled={isRefunding}
             >
               Cancel
             </Button>
@@ -627,7 +792,14 @@ export default function SalesDetailPage() {
               onClick={handleRefund}
               disabled={refundTotal <= 0 || refundTotal > refundableAmount || isRefunding}
             >
-              {isRefunding ? 'Processing...' : `Refund ${formatCurrency(refundTotal)}`}
+              {isRefunding ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-black mr-2" />
+                  Processing...
+                </>
+              ) : (
+                `Process Refund ${formatCurrency(refundTotal)}`
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

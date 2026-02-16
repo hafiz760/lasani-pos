@@ -29,9 +29,13 @@ type ReportRow = {
 }
 
 type ReportTotals = {
+  totalSales: number
+  totalExpenses: number
+  totalRefunds: number
+  totalPurchases: number
+  netProfit: number
   totalCredit: number
   totalDebit: number
-  netChange: number
 }
 
 type ReportPayload = {
@@ -71,22 +75,32 @@ export default function TransactionsPrintPreviewPage() {
           </div>
         </div>
 
-        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 16px 0;">
-          <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px;">
-            <div style="font-size: 11px; text-transform: uppercase; color: #6b7280;">Total Debit</div>
-            <div style="font-size: 16px; font-weight: 700;">${formatCurrency(
-              totals.totalDebit
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 16px 0;">
+          <div style="border: 2px solid #10b981; border-radius: 12px; padding: 12px; background: #ecfdf5;">
+            <div style="font-size: 11px; text-transform: uppercase; color: #059669; font-weight: 700;">Total Sales</div>
+            <div style="font-size: 18px; font-weight: 700; color: #059669;">${formatCurrency(
+              totals.totalSales
             )}</div>
+            <div style="font-size: 10px; color: #6b7280; margin-top: 2px;">Revenue generated</div>
           </div>
-          <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px;">
-            <div style="font-size: 11px; text-transform: uppercase; color: #6b7280;">Total Credit</div>
-            <div style="font-size: 16px; font-weight: 700;">${formatCurrency(
-              totals.totalCredit
+          <div style="border: 2px solid #ef4444; border-radius: 12px; padding: 12px; background: #fef2f2;">
+            <div style="font-size: 11px; text-transform: uppercase; color: #dc2626; font-weight: 700;">Total Expenses</div>
+            <div style="font-size: 18px; font-weight: 700; color: #dc2626;">${formatCurrency(
+              totals.totalExpenses + totals.totalPurchases
             )}</div>
+            <div style="font-size: 10px; color: #6b7280; margin-top: 2px;">Expenses + Purchases</div>
           </div>
-          <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px;">
-            <div style="font-size: 11px; text-transform: uppercase; color: #6b7280;">Net Cash</div>
-            <div style="font-size: 16px; font-weight: 700;">${formatCurrency(totals.netChange)}</div>
+          <div style="border: 2px solid #f59e0b; border-radius: 12px; padding: 12px; background: #fffbeb;">
+            <div style="font-size: 11px; text-transform: uppercase; color: #d97706; font-weight: 700;">Refunds</div>
+            <div style="font-size: 18px; font-weight: 700; color: #d97706;">${formatCurrency(
+              totals.totalRefunds
+            )}</div>
+            <div style="font-size: 10px; color: #6b7280; margin-top: 2px;">Money returned</div>
+          </div>
+          <div style="border: 2px solid #4ade80; border-radius: 12px; padding: 12px; background: #f0fdf4;">
+            <div style="font-size: 11px; text-transform: uppercase; color: #16a34a; font-weight: 700;">Net Profit</div>
+            <div style="font-size: 18px; font-weight: 700; color: ${totals.netProfit >= 0 ? '#16a34a' : '#dc2626'};">${formatCurrency(totals.netProfit)}</div>
+            <div style="font-size: 10px; color: #6b7280; margin-top: 2px;">Sales - Expenses - Refunds</div>
           </div>
         </div>
 
@@ -146,13 +160,13 @@ export default function TransactionsPrintPreviewPage() {
     }))
 
     exportData.push({
-      Date: 'TOTAL',
-      Description: '',
+      Date: '',
+      Description: 'SUMMARY',
       Account: '',
       Type: '',
-      Amount: `Debit ${formatCurrency(report.totals.totalDebit)} | Credit ${formatCurrency(
-        report.totals.totalCredit
-      )}`,
+      Amount: `Sales: ${formatCurrency(report.totals.totalSales)} | Expenses: ${formatCurrency(
+        report.totals.totalExpenses + report.totals.totalPurchases
+      )} | Profit: ${formatCurrency(report.totals.netProfit)}`,
       Reference: ''
     })
 
@@ -209,29 +223,74 @@ export default function TransactionsPrintPreviewPage() {
           ) : (
             <ScrollArea className="max-h-[70vh]">
               <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  <div className="rounded-lg border border-border p-4 bg-muted/20">
-                    <div className="text-xs font-semibold uppercase text-muted-foreground">
-                      Total Debit
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                  {/* Total Sales */}
+                  <div className="rounded-xl border-2 border-emerald-500/30 bg-emerald-500/5 p-5">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="text-xs font-black uppercase text-emerald-700 dark:text-emerald-400">
+                        Total Sales
+                      </div>
+                      <div className="h-8 w-8 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                        <span className="text-emerald-600 text-lg">📈</span>
+                      </div>
                     </div>
-                    <div className="text-lg font-black text-emerald-600">
-                      {formatCurrency(report.totals.totalDebit)}
+                    <div className="text-2xl font-black text-emerald-600">
+                      {formatCurrency(report.totals.totalSales)}
                     </div>
+                    <div className="text-xs text-muted-foreground mt-1">Revenue generated</div>
                   </div>
-                  <div className="rounded-lg border border-border p-4 bg-muted/20">
-                    <div className="text-xs font-semibold uppercase text-muted-foreground">
-                      Total Credit
+
+                  {/* Total Expenses */}
+                  <div className="rounded-xl border-2 border-red-500/30 bg-red-500/5 p-5">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="text-xs font-black uppercase text-red-700 dark:text-red-400">
+                        Total Expenses
+                      </div>
+                      <div className="h-8 w-8 rounded-full bg-red-500/20 flex items-center justify-center">
+                        <span className="text-red-600 text-lg">💸</span>
+                      </div>
                     </div>
-                    <div className="text-lg font-black text-red-500">
-                      {formatCurrency(report.totals.totalCredit)}
+                    <div className="text-2xl font-black text-red-600">
+                      {formatCurrency(report.totals.totalExpenses + report.totals.totalPurchases)}
                     </div>
+                    <div className="text-xs text-muted-foreground mt-1">Expenses + Purchases</div>
                   </div>
-                  <div className="rounded-lg border border-border p-4 bg-muted/20">
-                    <div className="text-xs font-semibold uppercase text-muted-foreground">
-                      Net Cash
+
+                  {/* Total Refunds */}
+                  <div className="rounded-xl border-2 border-amber-500/30 bg-amber-500/5 p-5">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="text-xs font-black uppercase text-amber-700 dark:text-amber-400">
+                        Refunds
+                      </div>
+                      <div className="h-8 w-8 rounded-full bg-amber-500/20 flex items-center justify-center">
+                        <span className="text-amber-600 text-lg">↩️</span>
+                      </div>
                     </div>
-                    <div className="text-lg font-black text-foreground">
-                      {formatCurrency(report.totals.netChange)}
+                    <div className="text-2xl font-black text-amber-600">
+                      {formatCurrency(report.totals.totalRefunds)}
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-1">Money returned</div>
+                  </div>
+
+                  {/* Net Profit */}
+                  <div className="rounded-xl border-2 border-[#4ade80]/50 bg-[#4ade80]/10 p-5">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="text-xs font-black uppercase text-[#16a34a] dark:text-[#4ade80]">
+                        Net Profit
+                      </div>
+                      <div className="h-8 w-8 rounded-full bg-[#4ade80]/30 flex items-center justify-center">
+                        <span className="text-[#16a34a] text-lg">💰</span>
+                      </div>
+                    </div>
+                    <div
+                      className={`text-2xl font-black ${
+                        report.totals.netProfit >= 0 ? 'text-[#16a34a]' : 'text-red-600'
+                      }`}
+                    >
+                      {formatCurrency(report.totals.netProfit)}
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-1">
+                      Sales - Expenses - Refunds
                     </div>
                   </div>
                 </div>

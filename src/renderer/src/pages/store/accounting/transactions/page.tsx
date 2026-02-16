@@ -43,9 +43,13 @@ export default function TransactionsPage() {
   const [isGenerating, setIsGenerating] = useState(false)
   const [reportRows, setReportRows] = useState<any[]>([])
   const [reportTotals, setReportTotals] = useState({
-    totalCredit: 0,
+    totalSales: 0,
+    totalExpenses: 0,
+    totalRefunds: 0,
+    totalPurchases: 0,
+    netProfit: 0,
     totalDebit: 0,
-    netChange: 0
+    totalCredit: 0
   })
   const [isReportLoading, setIsReportLoading] = useState(false)
 
@@ -166,16 +170,44 @@ export default function TransactionsPage() {
 
       const totals = rows.reduce(
         (acc, row) => {
+          // Calculate debit/credit for backwards compatibility
           if (row.entryType === 'DEBIT') {
             acc.totalDebit += row.totalAmount
           } else {
             acc.totalCredit += row.totalAmount
           }
-          acc.netChange = acc.totalDebit - acc.totalCredit
+
+          // Categorize by business type
+          const refType = row.referenceType?.toUpperCase()
+          if (refType === 'SALE') {
+            acc.totalSales += row.totalAmount
+          } else if (refType === 'REFUND') {
+            acc.totalRefunds += row.totalAmount
+          } else if (refType === 'PURCHASE' || refType === 'PURCHASE_ORDER') {
+            acc.totalPurchases += row.totalAmount
+          } else if (refType === 'EXPENSE') {
+            acc.totalExpenses += row.totalAmount
+          } else if (row.entryType === 'CREDIT') {
+            // Any other credit is likely an expense
+            acc.totalExpenses += row.totalAmount
+          }
+
           return acc
         },
-        { totalCredit: 0, totalDebit: 0, netChange: 0 }
+        {
+          totalSales: 0,
+          totalExpenses: 0,
+          totalRefunds: 0,
+          totalPurchases: 0,
+          netProfit: 0,
+          totalDebit: 0,
+          totalCredit: 0
+        }
       )
+
+      // Calculate net profit: Sales - (Expenses + Purchases + Refunds)
+      totals.netProfit =
+        totals.totalSales - (totals.totalExpenses + totals.totalPurchases + totals.totalRefunds)
 
       setReportRows(rows)
       setReportTotals(totals)
@@ -335,28 +367,73 @@ export default function TransactionsPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <div className="rounded-lg border border-border p-4 bg-muted/20">
-              <div className="text-xs font-semibold uppercase text-muted-foreground">
-                Total Debit
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+            {/* Total Sales */}
+            <div className="rounded-xl border-2 border-emerald-500/30 bg-emerald-500/5 p-5">
+              <div className="flex items-center justify-between mb-2">
+                <div className="text-xs font-black uppercase text-emerald-700 dark:text-emerald-400">
+                  Total Sales
+                </div>
+                <div className="h-8 w-8 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                  <span className="text-emerald-600 text-lg">📈</span>
+                </div>
               </div>
-              <div className="text-lg font-black text-emerald-600">
-                {formatCurrency(reportTotals.totalDebit)}
+              <div className="text-2xl font-black text-emerald-600">
+                {formatCurrency(reportTotals.totalSales)}
               </div>
+              <div className="text-xs text-muted-foreground mt-1">Revenue generated</div>
             </div>
-            <div className="rounded-lg border border-border p-4 bg-muted/20">
-              <div className="text-xs font-semibold uppercase text-muted-foreground">
-                Total Credit
+
+            {/* Total Expenses */}
+            <div className="rounded-xl border-2 border-red-500/30 bg-red-500/5 p-5">
+              <div className="flex items-center justify-between mb-2">
+                <div className="text-xs font-black uppercase text-red-700 dark:text-red-400">
+                  Total Expenses
+                </div>
+                <div className="h-8 w-8 rounded-full bg-red-500/20 flex items-center justify-center">
+                  <span className="text-red-600 text-lg">💸</span>
+                </div>
               </div>
-              <div className="text-lg font-black text-red-500">
-                {formatCurrency(reportTotals.totalCredit)}
+              <div className="text-2xl font-black text-red-600">
+                {formatCurrency(reportTotals.totalExpenses + reportTotals.totalPurchases)}
               </div>
+              <div className="text-xs text-muted-foreground mt-1">Expenses + Purchases</div>
             </div>
-            <div className="rounded-lg border border-border p-4 bg-muted/20">
-              <div className="text-xs font-semibold uppercase text-muted-foreground">Net Cash</div>
-              <div className="text-lg font-black text-foreground">
-                {formatCurrency(reportTotals.netChange)}
+
+            {/* Total Refunds */}
+            <div className="rounded-xl border-2 border-amber-500/30 bg-amber-500/5 p-5">
+              <div className="flex items-center justify-between mb-2">
+                <div className="text-xs font-black uppercase text-amber-700 dark:text-amber-400">
+                  Refunds
+                </div>
+                <div className="h-8 w-8 rounded-full bg-amber-500/20 flex items-center justify-center">
+                  <span className="text-amber-600 text-lg">↩️</span>
+                </div>
               </div>
+              <div className="text-2xl font-black text-amber-600">
+                {formatCurrency(reportTotals.totalRefunds)}
+              </div>
+              <div className="text-xs text-muted-foreground mt-1">Money returned</div>
+            </div>
+
+            {/* Net Profit */}
+            <div className="rounded-xl border-2 border-[#4ade80]/50 bg-[#4ade80]/10 p-5">
+              <div className="flex items-center justify-between mb-2">
+                <div className="text-xs font-black uppercase text-[#16a34a] dark:text-[#4ade80]">
+                  Net Profit
+                </div>
+                <div className="h-8 w-8 rounded-full bg-[#4ade80]/30 flex items-center justify-center">
+                  <span className="text-[#16a34a] text-lg">💰</span>
+                </div>
+              </div>
+              <div
+                className={`text-2xl font-black ${
+                  reportTotals.netProfit >= 0 ? 'text-[#16a34a]' : 'text-red-600'
+                }`}
+              >
+                {formatCurrency(reportTotals.netProfit)}
+              </div>
+              <div className="text-xs text-muted-foreground mt-1">Sales - Expenses - Refunds</div>
             </div>
           </div>
 

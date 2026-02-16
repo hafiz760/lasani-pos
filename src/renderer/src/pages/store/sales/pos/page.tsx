@@ -892,6 +892,9 @@ export default function POSPage() {
                           </span>
                         </div>
                         <div className="flex items-center gap-3 mt-1">
+                          <span className="text-[10px] font-black tracking-tighter bg-muted/50 px-1.5 py-0.5 rounded">
+                            Buying Price: {product.buyingPrice?.toLocaleString()}
+                          </span>
                           <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-tighter bg-muted/50 px-1.5 py-0.5 rounded">
                             SKU: {product.sku || '-'}
                           </span>
