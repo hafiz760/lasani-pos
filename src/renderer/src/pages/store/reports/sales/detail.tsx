@@ -86,8 +86,12 @@ export default function SalesDetailPage() {
 
   const refundableAmount = useMemo(() => {
     if (!sale) return 0
-    return Math.max(0, (sale.paidAmount || 0) - refundedAmount)
-  }, [sale, refundedAmount])
+    // A refund is possible as long as there are items that haven't been fully returned
+    const totalItems = sale.items.reduce((sum, i) => sum + i.quantity, 0)
+    const refundedItems = sale.refundHistory?.reduce((sum, h) =>
+      sum + h.items.reduce((s, i) => s + i.quantity, 0), 0) || 0
+    return totalItems - refundedItems
+  }, [sale])
 
 
 

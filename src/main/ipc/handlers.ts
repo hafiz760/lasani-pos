@@ -1981,11 +1981,6 @@ export function registerIpcHandlers() {
         const sale = await models.Sale.findById(saleId)
         if (!sale) return { success: false, error: 'Sale not found' }
 
-        const refundedAmount = Number(sale.refundedAmount || 0)
-        const maxRefundable = Math.max(0, (sale.paidAmount || 0) - refundedAmount)
-        if (maxRefundable <= 0) {
-          return { success: false, error: 'No refundable amount available.' }
-        }
 
         const refundItemsNormalized = (refundItems || [])
           .map((item: any) => ({
@@ -2038,11 +2033,18 @@ export function registerIpcHandlers() {
           return { success: false, error: 'Refund amount must be greater than 0.' }
         }
 
-        if (totalRefund > maxRefundable) {
-          return { success: false, error: 'Refund amount exceeds paid amount.' }
-        }
+        // Calculate breakdown: how much reduces debt vs how much is cash/bank payout
+        const currentPending = Math.max(0, sale.totalAmount - sale.paidAmount)
+        const debtReduction = Math.min(totalRefund, currentPending)
+        const cashPayout = totalRefund - debtReduction
 
+        // 1. Update Inventory and Profit
+        let totalCostToRevert = 0
         for (const refundItem of refundLineItems) {
+          const itemInSale = sale.items.find((i: any) => String(i.product) === String(refundItem.product))
+          if (itemInSale) {
+            totalCostToRevert += (itemInSale.costPrice || 0) * refundItem.quantity
+          }
           const product = await models.Product.findById(refundItem.product).select('productKind')
           const stockInc: any = { stockLevel: refundItem.quantity }
           if (product?.productKind === 'RAW_MATERIAL') {
@@ -2053,11 +2055,38 @@ export function registerIpcHandlers() {
           })
         }
 
-        sale.refundedAmount = refundedAmount + totalRefund
+        // 2. Adjust Sale Totals
+        sale.totalAmount = Math.max(0, sale.totalAmount - totalRefund)
+        sale.paidAmount = Math.max(0, sale.paidAmount - cashPayout)
+        sale.refundedAmount = Number(sale.refundedAmount || 0) + cashPayout
+        sale.profitAmount = Math.max(0, sale.profitAmount - (totalRefund - totalCostToRevert))
+
+        // Update items in the sale record to reflect returns if needed,
+        // but typically businesses keep original items and just track refundHistory.
+        // However, to keep profit and totals consistent with the items list, we'll keep the history.
+
+        // 3. Update Customer Debt if applicable
+        if (sale.customer && debtReduction > 0) {
+          await models.Customer.findByIdAndUpdate(sale.customer, {
+            $inc: { balance: -debtReduction }
+          })
+        }
+
+        // 4. Update Payment Status based on new balance
+        if (sale.paidAmount >= sale.totalAmount) {
+          sale.paymentStatus = 'PAID'
+        } else if (sale.paidAmount > 0) {
+          sale.paymentStatus = 'PARTIAL'
+        } else {
+          sale.paymentStatus = 'PENDING'
+        }
+
         sale.refundHistory = sale.refundHistory || []
         sale.refundHistory.push({
           date: new Date(),
-          amount: totalRefund,
+          amount: totalRefund, // The total value of items returned
+          cashAmount: cashPayout, // How much was actually given back in cash
+          debtAdjustment: debtReduction, // How much was reduced from pending balance
           method: method || 'Cash',
           reason,
           processedBy,
@@ -2066,23 +2095,26 @@ export function registerIpcHandlers() {
 
         await sale.save()
 
-        const accounts = await ensureDefaultAccounts(String(sale.store))
-        const accountId =
-          method === 'Bank Transfer' ? String(accounts.bank._id) : String(accounts.cash._id)
-        await models.Account.findByIdAndUpdate(accountId, {
-          $inc: { currentBalance: -totalRefund }
-        })
+        // 5. Update Bank/Cash Accounts ONLY if there was a cash payout
+        if (cashPayout > 0) {
+          const accounts = await ensureDefaultAccounts(String(sale.store))
+          const accountId =
+            method === 'Bank Transfer' ? String(accounts.bank._id) : String(accounts.cash._id)
+          await models.Account.findByIdAndUpdate(accountId, {
+            $inc: { currentBalance: -cashPayout }
+          })
 
-        await createAccountTransaction({
-          storeId: String(sale.store),
-          createdBy: String(processedBy || sale.soldBy),
-          description: `Refund ${sale.invoiceNumber || sale._id}`,
-          referenceType: 'REFUND',
-          referenceId: String(sale._id),
-          accountId,
-          entryType: 'CREDIT',
-          amount: totalRefund
-        })
+          await createAccountTransaction({
+            storeId: String(sale.store),
+            createdBy: String(processedBy || sale.soldBy),
+            description: `Refund (Cash Payout) ${sale.invoiceNumber || sale._id}`,
+            referenceType: 'REFUND',
+            referenceId: String(sale._id),
+            accountId,
+            entryType: 'CREDIT',
+            amount: cashPayout
+          })
+        }
 
         return toJSON({ success: true, data: sale })
       } catch (error: any) {

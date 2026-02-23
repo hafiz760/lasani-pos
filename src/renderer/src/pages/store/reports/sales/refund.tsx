@@ -94,7 +94,8 @@ export default function RefundPage() {
 
     const refundableAmount = useMemo(() => {
         if (!sale) return 0
-        return Math.max(0, (sale.paidAmount || 0) - (sale.refundedAmount || 0))
+        // Now refundable amount is the total value of remaining items in the sale
+        return sale.totalAmount || 0
     }, [sale])
 
     const refundTotal = useMemo(() => {
@@ -233,7 +234,7 @@ export default function RefundPage() {
                                 </div>
                             </div>
                             <div className="text-right space-y-1">
-                                <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Original Paid Amount (Limit)</span>
+                                <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Returnable Item Value (Limit)</span>
                                 <div className="text-lg font-bold text-muted-foreground">
                                     {formatCurrency(refundableAmount)}
                                 </div>
@@ -395,9 +396,40 @@ export default function RefundPage() {
                                         </div>
                                         <div className="border-t-2 border-dashed border-border pt-4 space-y-4">
                                             <div className="flex justify-between items-center bg-[#E8705A]/5 p-3 rounded-lg border border-[#E8705A]/10">
-                                                <span className="text-sm font-black uppercase tracking-tighter">Grand Total</span>
+                                                <span className="text-sm font-black uppercase tracking-tighter">Gross Return</span>
                                                 <span className="text-2xl font-black text-[#E8705A]">{formatCurrency(refundTotal)}</span>
                                             </div>
+
+                                            {/* Refund Breakdown */}
+                                            {refundTotal > 0 && (
+                                                <div className="space-y-2 px-1">
+                                                    {(() => {
+                                                        const pending = Math.max(0, (sale.totalAmount || 0) - (sale.paidAmount || 0))
+                                                        const debtRed = Math.min(refundTotal, pending)
+                                                        const cashPay = refundTotal - debtRed
+                                                        return (
+                                                            <>
+                                                                {debtRed > 0 && (
+                                                                    <div className="flex justify-between text-[10px] font-bold text-muted-foreground">
+                                                                        <span>Debt Adjustment (Credit)</span>
+                                                                        <span>-{formatCurrency(debtRed)}</span>
+                                                                    </div>
+                                                                )}
+                                                                {cashPay > 0 ? (
+                                                                    <div className="flex justify-between text-[10px] font-black text-emerald-600">
+                                                                        <span>Payout Amount</span>
+                                                                        <span>{formatCurrency(cashPay)}</span>
+                                                                    </div>
+                                                                ) : (
+                                                                    <div className="text-[9px] text-center italic text-muted-foreground pt-1">
+                                                                        No cash payout (Full balance adjustment)
+                                                                    </div>
+                                                                )}
+                                                            </>
+                                                        )
+                                                    })()}
+                                                </div>
+                                            )}
 
                                             {/* Additional Refund Details Form */}
                                             <div className="space-y-3 mt-4 pt-3 border-t border-border/50">

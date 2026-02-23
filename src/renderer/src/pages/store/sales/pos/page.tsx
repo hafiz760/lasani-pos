@@ -1309,7 +1309,7 @@ export default function POSPage() {
 
       {/* Receipt Modal - Keep your existing receipt code here */}
       <Dialog open={showReceipt} onOpenChange={setShowReceipt}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto overflow-x-hidden">
           <DialogHeader>
             <DialogTitle className="text-2xl font-black text-center text-[#E8705A]">
               Sale Completed Successfully!
@@ -1369,9 +1369,9 @@ export default function POSPage() {
                 <TableBody>
                   {lastSale?.items?.map((item: SaleItem, index: number) => (
                     <TableRow key={index} className="border-b border-dashed">
-                      <TableCell className="font-medium">
+                      <TableCell className="font-medium max-w-[200px]">
                         <div>
-                          <div className="font-black">{item.productName}</div>
+                          <div className="font-black break-words">{item.productName}</div>
                         </div>
                       </TableCell>
                       <TableCell className="text-center font-black">
@@ -1460,7 +1460,7 @@ export default function POSPage() {
       </Dialog>
 
       <Dialog open={creditDialogOpen} onOpenChange={setCreditDialogOpen}>
-        <DialogContent>
+        <DialogContent className="overflow-x-hidden max-w-[95vw] sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Credit Customer Details</DialogTitle>
             <DialogDescription>Capture customer information for credit sales.</DialogDescription>
