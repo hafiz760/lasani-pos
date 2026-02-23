@@ -75,7 +75,7 @@ export function StoreSwitcher() {
                     className="w-[200px] justify-between border-border bg-card hover:bg-accent text-card-foreground"
                 >
                     <div className="flex items-center gap-2 truncate">
-                        <StoreIcon className="h-4 w-4 text-[#4ade80]" />
+                        <StoreIcon className="h-4 w-4 text-[#E8705A]" />
                         {selectedStore ? selectedStore.name : "Select Store..."}
                     </div>
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -92,7 +92,7 @@ export function StoreSwitcher() {
                                     key={store._id}
                                     value={store.name}
                                     onSelect={() => onStoreSelect(store)}
-                                    className="cursor-pointer focus:bg-[#4ade80] focus:text-black"
+                                    className="cursor-pointer focus:bg-[#E8705A] focus:text-white"
                                 >
                                     <Check
                                         className={cn(

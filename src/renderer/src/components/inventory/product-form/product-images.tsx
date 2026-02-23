@@ -58,7 +58,7 @@ export function ProductImages({
             </button>
           </div>
         ))}
-        <label className="w-28 h-28 rounded-lg border-2 border-dashed border-muted-foreground/50 hover:border-[#4ade80] hover:bg-[#4ade80]/10 flex flex-col items-center justify-center cursor-pointer transition-all bg-background shadow-sm hover:shadow-md">
+        <label className="w-28 h-28 rounded-lg border-2 border-dashed border-muted-foreground/50 hover:border-[#E8705A] hover:bg-[#E8705A]/10 flex flex-col items-center justify-center cursor-pointer transition-all bg-background shadow-sm hover:shadow-md">
           <Upload className="w-8 h-8 text-muted-foreground mb-2" />
           <span className="text-xs text-muted-foreground font-semibold">Add Image</span>
           <input

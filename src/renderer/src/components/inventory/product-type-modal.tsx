@@ -18,10 +18,10 @@ export function ProductTypeModal({ open, onClose, onSelectType }: ProductTypeMod
           {/* Simple Product */}
           <button
             onClick={() => onSelectType('SIMPLE')}
-            className="flex flex-col items-center gap-3 p-6 border-2 border-border rounded-lg hover:border-[#4ade80] hover:bg-[#4ade80]/5 transition-all group"
+            className="flex flex-col items-center gap-3 p-6 border-2 border-border rounded-lg hover:border-[#E8705A] hover:bg-[#E8705A]/5 transition-all group"
           >
-            <div className="w-16 h-16 rounded-full bg-blue-500/10 flex items-center justify-center group-hover:bg-[#4ade80]/20 transition-colors">
-              <Package className="w-8 h-8 text-blue-500 group-hover:text-[#4ade80]" />
+            <div className="w-16 h-16 rounded-full bg-blue-500/10 flex items-center justify-center group-hover:bg-[#E8705A]/20 transition-colors">
+              <Package className="w-8 h-8 text-blue-500 group-hover:text-[#E8705A]" />
             </div>
             <div className="text-center">
               <h3 className="font-semibold text-lg">Simple Product</h3>
@@ -34,10 +34,10 @@ export function ProductTypeModal({ open, onClose, onSelectType }: ProductTypeMod
           {/* Raw Material */}
           <button
             onClick={() => onSelectType('RAW_MATERIAL')}
-            className="flex flex-col items-center gap-3 p-6 border-2 border-border rounded-lg hover:border-[#4ade80] hover:bg-[#4ade80]/5 transition-all group"
+            className="flex flex-col items-center gap-3 p-6 border-2 border-border rounded-lg hover:border-[#E8705A] hover:bg-[#E8705A]/5 transition-all group"
           >
-            <div className="w-16 h-16 rounded-full bg-purple-500/10 flex items-center justify-center group-hover:bg-[#4ade80]/20 transition-colors">
-              <Ruler className="w-8 h-8 text-purple-500 group-hover:text-[#4ade80]" />
+            <div className="w-16 h-16 rounded-full bg-purple-500/10 flex items-center justify-center group-hover:bg-[#E8705A]/20 transition-colors">
+              <Ruler className="w-8 h-8 text-purple-500 group-hover:text-[#E8705A]" />
             </div>
             <div className="text-center">
               <h3 className="font-semibold text-lg">Raw Material</h3>

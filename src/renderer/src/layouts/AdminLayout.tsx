@@ -78,7 +78,7 @@ export default function AdminLayout({ onLogout }: AdminLayoutProps) {
   if (isLoading) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-[#4ade80]" />
+        <Loader2 className="h-8 w-8 animate-spin text-[#E8705A]" />
       </div>
     )
   }
@@ -97,16 +97,16 @@ export default function AdminLayout({ onLogout }: AdminLayoutProps) {
         <div className="flex h-16 items-center justify-between px-4 border-b border-border">
           {isSidebarOpen ? (
             <div className="flex items-center gap-2">
-              <div className="h-8 w-8 rounded-lg bg-[#4ade80] flex items-center justify-center">
+              <div className="h-8 w-8 rounded-lg bg-[#E8705A] flex items-center justify-center">
                 <Shield className="h-5 w-5 text-black" />
               </div>
-              <div className="absolute inset-0 bg-linear-to-r from-[#4ade80]/10 to-purple-500/10 blur-3xl" />
-              <span className="text-xl font-bold bg-gradient-to-r from-green-400 to-emerald-600 bg-clip-text text-transparent">
+              <div className="absolute inset-0 bg-linear-to-r from-[#E8705A]/10 to-purple-500/10 blur-3xl" />
+              <span className="text-xl font-bold bg-gradient-to-r from-[#E8705A] to-[#D4604C] bg-clip-text text-transparent">
                 RexPOS
               </span>
             </div>
           ) : (
-            <div className="h-8 w-8 rounded-lg bg-[#4ade80] flex items-center justify-center mx-auto">
+            <div className="h-8 w-8 rounded-lg bg-[#E8705A] flex items-center justify-center mx-auto">
               <Shield className="h-5 w-5 text-black" />
             </div>
           )}
@@ -130,7 +130,7 @@ export default function AdminLayout({ onLogout }: AdminLayoutProps) {
                     variant={isActive ? 'secondary' : 'ghost'}
                     className={`w-full justify-start mb-1 ${
                       isActive
-                        ? 'bg-[#4ade80]/10 text-[#4ade80] hover:bg-[#4ade80]/20 font-semibold'
+                        ? 'bg-[#E8705A]/10 text-[#E8705A] hover:bg-[#E8705A]/20 font-semibold'
                         : 'text-muted-foreground hover:text-foreground hover:bg-muted'
                     } ${!isSidebarOpen && 'px-2 justify-center'}`}
                   >
@@ -173,7 +173,7 @@ export default function AdminLayout({ onLogout }: AdminLayoutProps) {
             >
               <Menu className="h-5 w-5" />
             </Button>
-            <div className="absolute -inset-0.5 bg-linear-to-r from-[#4ade80] to-purple-500 rounded-lg blur opacity-20 group-hover:opacity-40 transition duration-1000 group-hover:duration-200" />
+            <div className="absolute -inset-0.5 bg-linear-to-r from-[#E8705A] to-purple-500 rounded-lg blur opacity-20 group-hover:opacity-40 transition duration-1000 group-hover:duration-200" />
             <h1 className="text-xl font-bold bg-gradient-to-r from-purple-400 to-pink-600 bg-clip-text text-transparent">
               Super Admin Console
             </h1>

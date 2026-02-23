@@ -208,7 +208,7 @@ export default function SupplierDetailsPage() {
               <span className="text-sm text-muted-foreground">Current Balance:</span>
               <span
                 className={`text-lg font-bold ${
-                  supplier.currentBalance > 0 ? 'text-red-400' : 'text-[#4ade80]'
+                  supplier.currentBalance > 0 ? 'text-red-400' : 'text-[#E8705A]'
                 }`}
               >
                 Rs. {(supplier.currentBalance || 0).toLocaleString()}

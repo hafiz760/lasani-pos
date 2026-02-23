@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { DataPage } from "@renderer/components/shared/data-page";
 import { LoadingButton } from "@renderer/components/ui/loading-button";
 import { Button } from "@renderer/components/ui/button";
-import { Edit, Trash2, MoreVertical } from "lucide-react";
+import { Edit, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -13,12 +13,7 @@ import {
 } from "@renderer/components/ui/dialog";
 import { Input } from "@renderer/components/ui/input";
 import { DeleteConfirm } from "@renderer/components/shared/delete-confirm";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@renderer/components/ui/dropdown-menu";
+
 import { z } from "zod";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -169,32 +164,24 @@ export default function BrandsPage() {
       header: "Actions",
       accessor: "_id",
       render: (item: any) => (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="hover:bg-accent">
-              <MoreVertical className="w-4 h-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent
-            className="bg-popover border-border text-popover-foreground"
-            align="end"
+        <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 hover:bg-accent hover:text-[#E8705A]"
+            onClick={() => openEdit(item)}
           >
-            <DropdownMenuItem
-              onClick={() => openEdit(item)}
-              className="focus:bg-[#4ade80] focus:text-black cursor-pointer"
-            >
-              <Edit className="w-4 h-4 mr-2" />
-              Edit
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => setDeleteId(item._id)}
-              className="focus:bg-red-500 focus:text-white cursor-pointer text-red-400"
-            >
-              <Trash2 className="w-4 h-4 mr-2" />
-              Delete
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+            <Edit className="w-4 h-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 hover:bg-red-500/10 hover:text-red-500"
+            onClick={() => setDeleteId(item._id)}
+          >
+            <Trash2 className="w-4 h-4" />
+          </Button>
+        </div>
       ),
     },
   ];
@@ -284,7 +271,7 @@ export default function BrandsPage() {
                   type="submit"
                   isLoading={isSubmitting}
                   loadingText={editingBrand ? "Updating..." : "Creating..."}
-                  className="bg-[#4ade80] hover:bg-[#22c55e] text-black font-semibold"
+                  className="bg-[#E8705A] hover:bg-[#D4604C] text-black font-semibold"
                 >
                   {editingBrand ? "Update" : "Create"}
                 </LoadingButton>

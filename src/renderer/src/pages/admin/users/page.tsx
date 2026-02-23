@@ -294,7 +294,7 @@ export default function UsersPage() {
           </div>
           <Button
             onClick={() => setIsAddOpen(true)}
-            className="bg-[#4ade80] hover:bg-[#22c55e] text-black font-semibold h-10"
+            className="bg-[#E8705A] hover:bg-[#D4604C] text-black font-semibold h-10"
           >
             <Plus className="w-4 h-4 mr-2" />
             Add User
@@ -305,7 +305,7 @@ export default function UsersPage() {
       <div className="relative min-h-[400px]">
         {isLoading && (
           <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/50 backdrop-blur-[1px] rounded-xl">
-            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#4ade80]"></div>
+            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#E8705A]"></div>
           </div>
         )}
 
@@ -319,7 +319,7 @@ export default function UsersPage() {
                   <CardHeader className="flex flex-row items-center gap-4 space-y-0 pb-2">
                     <Avatar className="h-12 w-12 border border-border">
                       <AvatarImage src={user.avatarUrl} className="object-cover" />
-                      <AvatarFallback className="bg-[#4ade80]/10 text-[#4ade80] font-bold">
+                      <AvatarFallback className="bg-[#E8705A]/10 text-[#E8705A] font-bold">
                         {user.fullName?.charAt(0) || 'U'}
                       </AvatarFallback>
                     </Avatar>
@@ -423,7 +423,7 @@ export default function UsersPage() {
             {/* Assign New Store Section */}
             <div className="p-4 rounded-lg bg-muted/50 border border-border space-y-4">
               <h4 className="font-semibold text-sm flex items-center">
-                <Plus className="w-4 h-4 mr-2 text-[#4ade80]" />
+                <Plus className="w-4 h-4 mr-2 text-[#E8705A]" />
                 Grant New Access
               </h4>
               <div className="flex gap-3">
@@ -459,7 +459,7 @@ export default function UsersPage() {
                   onClick={handleAssign}
                   isLoading={isAssigning}
                   loadingText="Assigning..."
-                  className="bg-[#4ade80] text-black hover:bg-[#22c55e]"
+                  className="bg-[#E8705A] text-white hover:bg-[#D4604C]"
                 >
                   Assign
                 </LoadingButton>
@@ -713,7 +713,7 @@ export default function UsersPage() {
                   type="submit"
                   isLoading={isSubmitting}
                   loadingText={editingUserId ? 'Updating...' : 'Creating...'}
-                  className="bg-[#4ade80] hover:bg-[#22c55e] text-black font-semibold"
+                  className="bg-[#E8705A] hover:bg-[#D4604C] text-black font-semibold"
                 >
                   {editingUserId ? 'Update User' : 'Create User'}
                 </LoadingButton>

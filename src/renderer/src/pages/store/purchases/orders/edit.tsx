@@ -303,7 +303,7 @@ export default function EditPurchaseOrderPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-[60vh]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#4ade80]"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#E8705A]"></div>
       </div>
     )
   }
@@ -346,14 +346,14 @@ export default function EditPurchaseOrderPage() {
               <CardHeader className="bg-muted/30 border-b border-border py-4">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-sm font-black uppercase flex items-center gap-2">
-                    <PlusCircle className="w-4 h-4 text-[#4ade80]" />
+                    <PlusCircle className="w-4 h-4 text-[#E8705A]" />
                     Order Items
                   </CardTitle>
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
-                    className="h-8 text-[10px] font-black uppercase border-border hover:bg-[#4ade80]/10 hover:text-[#4ade80]"
+                    className="h-8 text-[10px] font-black uppercase border-border hover:bg-[#E8705A]/10 hover:text-[#E8705A]"
                     onClick={() => setIsBulkOpen(true)}
                   >
                     Bulk Selection
@@ -366,7 +366,7 @@ export default function EditPurchaseOrderPage() {
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <Input
                     placeholder="Search products by Name, SKU or Barcode (Enter to add)"
-                    className="bg-background border-border pl-10 h-11 text-base focus-visible:ring-[#4ade80]"
+                    className="bg-background border-border pl-10 h-11 text-base focus-visible:ring-[#E8705A]"
                     value={productSearch}
                     onChange={(e) => {
                       setProductSearch(e.target.value)
@@ -403,7 +403,7 @@ export default function EditPurchaseOrderPage() {
                           key={p._id}
                           className={`p-3 cursor-pointer flex items-center justify-between border-b border-border last:border-0 ${
                             idx === selectedSuggestionIndex
-                              ? 'bg-[#4ade80] text-black font-semibold'
+                              ? 'bg-[#E8705A] text-white font-semibold'
                               : 'hover:bg-accent text-popover-foreground transition-colors'
                           }`}
                           onClick={() => addProductToOrder(p)}
@@ -463,7 +463,7 @@ export default function EditPurchaseOrderPage() {
                                 <FormControl>
                                   <input
                                     type="number"
-                                    className="w-full bg-transparent border-none text-center focus:ring-2 focus:ring-[#4ade80] rounded outline-none h-9 font-bold text-foreground"
+                                    className="w-full bg-transparent border-none text-center focus:ring-2 focus:ring-[#E8705A] rounded outline-none h-9 font-bold text-foreground"
                                     {...inputField}
                                     onFocus={(e) => e.target.select()}
                                   />
@@ -479,7 +479,7 @@ export default function EditPurchaseOrderPage() {
                                 <FormControl>
                                   <input
                                     type="number"
-                                    className="w-full bg-transparent border-none text-right focus:ring-2 focus:ring-[#4ade80] rounded outline-none h-9 font-bold text-foreground pr-2"
+                                    className="w-full bg-transparent border-none text-right focus:ring-2 focus:ring-[#E8705A] rounded outline-none h-9 font-bold text-foreground pr-2"
                                     {...inputField}
                                     onFocus={(e) => e.target.select()}
                                   />
@@ -496,7 +496,7 @@ export default function EditPurchaseOrderPage() {
                                   <input
                                     type="number"
                                     placeholder="Optional"
-                                    className="w-full bg-transparent border-none text-right focus:ring-2 focus:ring-[#4ade80] rounded outline-none h-9 font-bold text-[#4ade80] pr-2 placeholder:text-muted-foreground/30 placeholder:text-[10px]"
+                                    className="w-full bg-transparent border-none text-right focus:ring-2 focus:ring-[#E8705A] rounded outline-none h-9 font-bold text-[#E8705A] pr-2 placeholder:text-muted-foreground/30 placeholder:text-[10px]"
                                     {...inputField}
                                     value={inputField.value ?? ''}
                                     onFocus={(e) => e.target.select()}
@@ -553,7 +553,7 @@ export default function EditPurchaseOrderPage() {
                         <FormControl>
                           <Input
                             type="number"
-                            className="bg-background border-border h-11 text-base font-bold focus-visible:ring-[#4ade80]"
+                            className="bg-background border-border h-11 text-base font-bold focus-visible:ring-[#E8705A]"
                             {...field}
                             onFocus={(e) => e.target.select()}
                           />
@@ -591,7 +591,7 @@ export default function EditPurchaseOrderPage() {
                         <FormControl>
                           <Input
                             type="number"
-                            className="bg-background border-border h-11 text-base font-bold focus-visible:ring-[#4ade80]"
+                            className="bg-background border-border h-11 text-base font-bold focus-visible:ring-[#E8705A]"
                             {...field}
                             onFocus={(e) => e.target.select()}
                           />
@@ -610,7 +610,7 @@ export default function EditPurchaseOrderPage() {
                         <FormControl>
                           <Input
                             placeholder="Optional remarks..."
-                            className="bg-background border-border h-11 text-base font-medium focus-visible:ring-[#4ade80]"
+                            className="bg-background border-border h-11 text-base font-medium focus-visible:ring-[#E8705A]"
                             {...field}
                           />
                         </FormControl>
@@ -625,7 +625,7 @@ export default function EditPurchaseOrderPage() {
               <Card className="bg-card border-border shadow-xl shadow-black/5">
                 <CardHeader className="bg-muted/30 border-b border-border py-4">
                   <CardTitle className="text-sm font-black uppercase flex items-center gap-2">
-                    <Truck className="w-4 h-4 text-[#4ade80]" />
+                    <Truck className="w-4 h-4 text-[#E8705A]" />
                     Supplier
                   </CardTitle>
                 </CardHeader>
@@ -665,7 +665,7 @@ export default function EditPurchaseOrderPage() {
                       type="button"
                       variant="outline"
                       size="icon"
-                      className="h-11 w-11 border-border bg-[#4ade80]/10 text-[#4ade80] hover:bg-[#4ade80] hover:text-white transition-all transform hover:scale-105"
+                      className="h-11 w-11 border-border bg-[#E8705A]/10 text-[#E8705A] hover:bg-[#E8705A] hover:text-white transition-all transform hover:scale-105"
                       onClick={() => setIsAddSupplierOpen(true)}
                     >
                       <UserPlus className="w-5 h-5" />
@@ -723,7 +723,7 @@ export default function EditPurchaseOrderPage() {
                       <span className="text-stone-500 font-black uppercase text-[10px] tracking-[0.2em] mb-1">
                         Grand Total
                       </span>
-                      <span className="text-3xl font-black text-[#4ade80] tabular-nums tracking-tighter">
+                      <span className="text-3xl font-black text-[#E8705A] tabular-nums tracking-tighter">
                         <span className="text-sm align-top mt-1 mr-1">Rs.</span>
                         {total.toLocaleString()}
                       </span>
@@ -734,7 +734,7 @@ export default function EditPurchaseOrderPage() {
                     <LoadingButton
                       type="submit"
                       isLoading={isSubmitting}
-                      className="w-full h-14 bg-[#4ade80] hover:bg-[#22c55e] text-black text-lg font-black uppercase tracking-widest shadow-lg shadow-[#4ade80]/20 transform active:scale-95 transition-all"
+                      className="w-full h-14 bg-[#E8705A] hover:bg-[#D4604C] text-black text-lg font-black uppercase tracking-widest shadow-lg shadow-[#E8705A]/20 transform active:scale-95 transition-all"
                     >
                       <Save className="w-5 h-5 mr-3" />
                       Update Order
@@ -769,7 +769,7 @@ export default function EditPurchaseOrderPage() {
         <DialogContent className="bg-background border-border text-foreground max-w-2xl h-[80vh] flex flex-col p-6 overflow-hidden">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold flex items-center gap-2">
-              <PlusCircle className="w-5 h-5 text-[#4ade80]" />
+              <PlusCircle className="w-5 h-5 text-[#E8705A]" />
               Quick Add Products
             </DialogTitle>
           </DialogHeader>
@@ -806,7 +806,7 @@ export default function EditPurchaseOrderPage() {
                         key={product._id}
                         className={`grid grid-cols-12 gap-2 p-3 items-center transition-colors cursor-pointer group ${
                           selectedBulkProducts.includes(product._id)
-                            ? 'bg-[#4ade80]/10'
+                            ? 'bg-[#E8705A]/10'
                             : 'hover:bg-accent/50'
                         }`}
                         onClick={() => {
@@ -825,7 +825,7 @@ export default function EditPurchaseOrderPage() {
                           />
                         </div>
                         <div className="col-span-6 flex flex-col">
-                          <span className="text-sm font-bold group-hover:text-[#4ade80] transition-colors">
+                          <span className="text-sm font-bold group-hover:text-[#E8705A] transition-colors">
                             {product.name}
                           </span>
                           <span className="text-[10px] text-muted-foreground font-black uppercase">
@@ -854,7 +854,7 @@ export default function EditPurchaseOrderPage() {
             </Button>
             <Button
               onClick={handleBulkAdd}
-              className="bg-[#4ade80] hover:bg-[#22c55e] text-black font-black uppercase text-[10px] h-11 px-8 tracking-widest shadow-lg shadow-[#4ade80]/20"
+              className="bg-[#E8705A] hover:bg-[#D4604C] text-black font-black uppercase text-[10px] h-11 px-8 tracking-widest shadow-lg shadow-[#E8705A]/20"
               disabled={selectedBulkProducts.length === 0}
             >
               Add {selectedBulkProducts.length} Selected
@@ -873,7 +873,7 @@ export default function EditPurchaseOrderPage() {
             >
               <DialogHeader className="p-6 bg-muted/30 border-b border-border">
                 <DialogTitle className="text-xl font-black uppercase flex items-center gap-2">
-                  <UserPlus className="w-5 h-5 text-[#4ade80]" />
+                  <UserPlus className="w-5 h-5 text-[#E8705A]" />
                   Add New Vendor
                 </DialogTitle>
               </DialogHeader>
@@ -989,7 +989,7 @@ export default function EditPurchaseOrderPage() {
                 <LoadingButton
                   type="submit"
                   isLoading={isSubmitting} // Use existing state
-                  className="bg-[#4ade80] hover:bg-[#22c55e] text-black font-black uppercase text-[10px] h-11 px-8 shadow-lg shadow-[#4ade80]/20"
+                  className="bg-[#E8705A] hover:bg-[#D4604C] text-black font-black uppercase text-[10px] h-11 px-8 shadow-lg shadow-[#E8705A]/20"
                 >
                   Create Vendor
                 </LoadingButton>

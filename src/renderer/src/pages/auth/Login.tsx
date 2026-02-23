@@ -71,10 +71,10 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
       <div className="w-full max-w-md p-4">
         <div className="flex flex-col items-center mb-8 gap-2">
           <div className="p-3 bg-card rounded-xl border border-border">
-            <Smartphone className="w-8 h-8 text-[#4ade80]" />
+            <Smartphone className="w-8 h-8 text-[#E8705A]" />
           </div>
           <h1 className="text-2xl font-bold text-foreground tracking-tight text-center">
-            Rex<span className="text-[#4ade80]">POS</span>
+            Rex<span className="text-[#E8705A]">POS</span>
           </h1>
           <p className="text-muted-foreground text-sm">Inventory & Sales Management</p>
         </div>
@@ -101,7 +101,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
                         <Input
                           placeholder="admin@example.com"
                           {...field}
-                          className="bg-muted border-border text-foreground focus:border-[#4ade80] focus:ring-[#4ade80]/20 transition-all h-11"
+                          className="bg-muted border-border text-foreground focus:border-[#E8705A] focus:ring-[#E8705A]/20 transition-all h-11"
                         />
                       </FormControl>
                       <FormMessage className="text-red-400 text-xs" />
@@ -120,7 +120,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
                             type={showPassword ? 'text' : 'password'}
                             placeholder="••••••••"
                             {...field}
-                            className="bg-muted border-border text-foreground focus:border-[#4ade80] focus:ring-[#4ade80]/20 transition-all h-11 pr-10"
+                            className="bg-muted border-border text-foreground focus:border-[#E8705A] focus:ring-[#E8705A]/20 transition-all h-11 pr-10"
                           />
                           <button
                             type="button"
@@ -143,7 +143,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
                   type="submit"
                   isLoading={isLoading}
                   loadingText="Signing in..."
-                  className="w-full bg-[#4ade80] hover:bg-[#22c55e] text-black font-semibold h-11 transition-all mt-2"
+                  className="w-full bg-[#E8705A] hover:bg-[#D4604C] text-black font-semibold h-11 transition-all mt-2"
                 >
                   Sign In
                 </LoadingButton>

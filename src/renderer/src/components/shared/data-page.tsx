@@ -40,6 +40,7 @@ interface DataPageProps {
   onSearchChange?: (search: string) => void
   searchTerm?: string
   extraActions?: React.ReactNode
+  onRowClick?: (item: any) => void
 }
 
 export function DataPage({
@@ -60,7 +61,8 @@ export function DataPage({
   onPageSizeChange,
   onSearchChange,
   searchTerm: externalSearchTerm,
-  extraActions
+  extraActions,
+  onRowClick
 }: DataPageProps) {
   const [internalSearchTerm, setInternalSearchTerm] = useState('')
 
@@ -72,10 +74,10 @@ export function DataPage({
   const shouldFilterLocally = !onPageChange
   const filteredData = shouldFilterLocally
     ? data.filter((item) =>
-        Object.values(item).some((val) =>
-          String(val).toLowerCase().includes(searchTerm.toLowerCase())
-        )
+      Object.values(item).some((val) =>
+        String(val).toLowerCase().includes(searchTerm.toLowerCase())
       )
+    )
     : data
 
   const handleExportExcel = () => {
@@ -115,7 +117,7 @@ export function DataPage({
           {onAdd && (
             <Button
               onClick={onAdd}
-              className="bg-[#4ade80] hover:bg-[#22c55e] text-black font-semibold"
+              className="bg-[#E8705A] hover:bg-[#D4604C] text-black font-semibold"
             >
               <Plus className="w-4 h-4 mr-2" />
               {addLabel}
@@ -142,7 +144,7 @@ export function DataPage({
                 onClick={handleExportExcel}
                 className="border-border hover:bg-accent h-10 flex-1 md:flex-none"
               >
-                <FileSpreadsheet className="w-4 h-4 mr-2 text-[#4ade80]" />
+                <FileSpreadsheet className="w-4 h-4 mr-2 text-[#E8705A]" />
                 Excel
               </Button>
               <Button
@@ -173,7 +175,7 @@ export function DataPage({
                   <TableRow>
                     <TableCell colSpan={columns.length} className="text-center py-20">
                       <div className="flex items-center justify-center">
-                        <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#4ade80] border-t-transparent"></div>
+                        <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#E8705A] border-t-transparent"></div>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -190,7 +192,8 @@ export function DataPage({
                   filteredData.map((item, rowIdx) => (
                     <TableRow
                       key={rowIdx}
-                      className="hover:bg-accent border-border group transition-colors"
+                      className={`hover:bg-accent border-border group transition-colors ${onRowClick ? 'cursor-pointer' : ''}`}
+                      onClick={() => onRowClick?.(item)}
                     >
                       {columns.map((col, colIdx) => (
                         <TableCell key={colIdx} className="py-4 text-sm">

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { DataPage } from '@renderer/components/shared/data-page'
 import { Badge } from '@renderer/components/ui/badge'
 import { format } from 'date-fns'
-import { Eye, Trash2, MoreVertical, FileText } from 'lucide-react'
+import { Trash2, FileText } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -15,12 +15,7 @@ import {
 import { Button } from '@renderer/components/ui/button'
 import { LoadingButton } from '@renderer/components/ui/loading-button'
 import { toast } from 'sonner'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger
-} from '@renderer/components/ui/dropdown-menu'
+
 import {
   Select,
   SelectContent,
@@ -205,7 +200,7 @@ export default function SalesReportsPage() {
       header: 'Total',
       accessor: 'totalAmount',
       render: (item: any) => (
-        <span className="text-[#4ade80] font-bold">Rs. {item.totalAmount?.toLocaleString()}</span>
+        <span className="text-[#E8705A] font-bold">Rs. {item.totalAmount?.toLocaleString()}</span>
       )
     },
     {
@@ -215,7 +210,7 @@ export default function SalesReportsPage() {
         <Badge
           className={
             item.paymentStatus === 'PAID'
-              ? 'bg-[#4ade80]/10 text-[#4ade80] border-[#4ade80]/20'
+              ? 'bg-[#E8705A]/10 text-[#E8705A] border-[#E8705A]/20'
               : item.paymentStatus === 'PARTIAL'
                 ? 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20'
                 : 'bg-red-500/10 text-red-500 border-red-500/20'
@@ -236,46 +231,29 @@ export default function SalesReportsPage() {
       header: 'Actions',
       accessor: '_id',
       render: (item: any) => (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="hover:bg-accent h-8 w-8 text-foreground">
-              <MoreVertical className="w-4 h-4" />
+        <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+          {item.paymentStatus !== 'PAID' && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 hover:bg-accent hover:text-[#E8705A]"
+              onClick={() => openPaymentDialog(item)}
+            >
+              <Wallet className="w-4 h-4" />
             </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent
-            className="bg-popover border-border text-popover-foreground"
-            align="end"
+          )}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 hover:bg-red-500/10 hover:text-red-500"
+            onClick={() => {
+              setSelectedSale(item)
+              setIsDeleteOpen(true)
+            }}
           >
-            {item.paymentStatus !== 'PAID' && (
-              <DropdownMenuItem
-                onClick={() => openPaymentDialog(item)}
-                className="focus:bg-[#4ade80] focus:text-black cursor-pointer font-medium"
-              >
-                <Wallet className="w-4 h-4 mr-2" />
-                Record Payment
-              </DropdownMenuItem>
-            )}
-            <DropdownMenuItem
-              onClick={() => {
-                navigate(`/dashboard/reports/sales/${item._id}`)
-              }}
-              className="focus:bg-[#4ade80] focus:text-black cursor-pointer"
-            >
-              <Eye className="w-4 h-4 mr-2" />
-              View Details
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => {
-                setSelectedSale(item)
-                setIsDeleteOpen(true)
-              }}
-              className="focus:bg-red-500 focus:text-white cursor-pointer text-red-500 hover:text-white transition-colors"
-            >
-              <Trash2 className="w-4 h-4 mr-2" />
-              Delete
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+            <Trash2 className="w-4 h-4" />
+          </Button>
+        </div>
       )
     }
   ]
@@ -285,7 +263,7 @@ export default function SalesReportsPage() {
       <div className="flex flex-col gap-3 mb-4 px-1 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2">
           <Button
-            className="bg-[#4ade80] text-black hover:bg-[#22c55e] font-semibold"
+            className="bg-[#E8705A] text-white hover:bg-[#D4604C] font-semibold"
             onClick={() => navigate('/dashboard/reports/sales-report')}
           >
             <FileText className="w-4 h-4 mr-2" />
@@ -327,6 +305,7 @@ export default function SalesReportsPage() {
           setSearchTerm(val)
           setPage(1)
         }}
+        onRowClick={(item) => navigate(`/dashboard/reports/sales/${item._id}`)}
       />
 
       {/* Delete Confirmation Dialog */}
@@ -380,7 +359,7 @@ export default function SalesReportsPage() {
         <DialogContent className="bg-background border-border text-foreground sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Wallet className="w-5 h-5 text-[#4ade80]" />
+              <Wallet className="w-5 h-5 text-[#E8705A]" />
               Record Payment
             </DialogTitle>
           </DialogHeader>
@@ -438,10 +417,9 @@ export default function SalesReportsPage() {
                       onClick={() => setPaymentMethod(method)}
                       className={`
                         cursor-pointer border rounded-lg p-2 text-center text-sm transition-all
-                        ${
-                          paymentMethod === method
-                            ? 'bg-[#4ade80]/10 border-[#4ade80] text-[#4ade80] font-bold'
-                            : 'bg-background border-border hover:border-gray-400'
+                        ${paymentMethod === method
+                          ? 'bg-[#E8705A]/10 border-[#E8705A] text-[#E8705A] font-bold'
+                          : 'bg-background border-border hover:border-gray-400'
                         }
                       `}
                     >
@@ -466,7 +444,7 @@ export default function SalesReportsPage() {
               Cancel
             </Button>
             <LoadingButton
-              className="bg-[#4ade80] hover:bg-[#22c55e] text-black font-bold"
+              className="bg-[#E8705A] hover:bg-[#D4604C] text-black font-bold"
               onClick={handleRecordPayment}
               isLoading={isPaymentSubmitting}
             >

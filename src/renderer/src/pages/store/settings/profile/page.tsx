@@ -182,8 +182,8 @@ export default function SettingsProfilePage() {
       <Card className="border-border shadow-xl shadow-black/5">
         <CardHeader className="bg-muted/30 border-b border-border">
           <div className="flex items-center gap-4">
-            <div className="h-10 w-10 rounded-lg bg-[#4ade80]/10 flex items-center justify-center border border-[#4ade80]/20">
-              <User className="h-5 w-5 text-[#4ade80]" />
+            <div className="h-10 w-10 rounded-lg bg-[#E8705A]/10 flex items-center justify-center border border-[#E8705A]/20">
+              <User className="h-5 w-5 text-[#E8705A]" />
             </div>
             <div>
               <CardTitle className="text-lg font-black uppercase">Personal Information</CardTitle>
@@ -215,7 +215,7 @@ export default function SettingsProfilePage() {
                   <div className="flex justify-center md:justify-start">
                     <Label
                       htmlFor="avatar-upload"
-                      className="cursor-pointer inline-flex items-center justify-center rounded-md text-xs font-black uppercase transition-all focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-input bg-background shadow-sm hover:bg-[#4ade80] hover:text-black hover:border-[#4ade80] h-10 px-6 py-2 gap-2"
+                      className="cursor-pointer inline-flex items-center justify-center rounded-md text-xs font-black uppercase transition-all focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-input bg-background shadow-sm hover:bg-[#E8705A] hover:text-white hover:border-[#E8705A] h-10 px-6 py-2 gap-2"
                     >
                       <Upload className="w-4 h-4" />
                       Upload New Photo
@@ -246,7 +246,7 @@ export default function SettingsProfilePage() {
                       <FormControl>
                         <Input
                           {...field}
-                          className="bg-muted/30 border-border h-11 font-bold focus-visible:ring-[#4ade80]"
+                          className="bg-muted/30 border-border h-11 font-bold focus-visible:ring-[#E8705A]"
                           placeholder="Enter your full name"
                         />
                       </FormControl>
@@ -301,7 +301,7 @@ export default function SettingsProfilePage() {
                   type="submit"
                   isLoading={isLoading}
                   loadingText="SAVING..."
-                  className="bg-[#4ade80] hover:bg-[#22c55e] text-black font-black uppercase text-xs tracking-widest h-12 px-8 shadow-lg shadow-[#4ade80]/20"
+                  className="bg-[#E8705A] hover:bg-[#D4604C] text-black font-black uppercase text-xs tracking-widest h-12 px-8 shadow-lg shadow-[#E8705A]/20"
                 >
                   Save Changes
                 </LoadingButton>

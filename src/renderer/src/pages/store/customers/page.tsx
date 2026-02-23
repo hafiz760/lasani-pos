@@ -1,25 +1,9 @@
-import { useEffect, useMemo, useState } from 'react'
-import type { DateRange } from 'react-day-picker'
-import {
-  endOfDay,
-  endOfMonth,
-  endOfWeek,
-  format,
-  startOfDay,
-  startOfMonth,
-  startOfWeek
-} from 'date-fns'
+import { useEffect, useState } from 'react'
 import { DataPage } from '@renderer/components/shared/data-page'
 import { Button } from '@renderer/components/ui/button'
 import { LoadingButton } from '@renderer/components/ui/loading-button'
-import { Calendar } from '@renderer/components/ui/calendar'
-import { Card, CardContent, CardHeader, CardTitle } from '@renderer/components/ui/card'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger
-} from '@renderer/components/ui/dropdown-menu'
+
+
 import {
   Dialog,
   DialogContent,
@@ -36,69 +20,18 @@ import {
   FormMessage
 } from '@renderer/components/ui/form'
 import { Input } from '@renderer/components/ui/input'
-import { Label } from '@renderer/components/ui/label'
-import { Popover, PopoverContent, PopoverTrigger } from '@renderer/components/ui/popover'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow
-} from '@renderer/components/ui/table'
+
 import { toast } from 'sonner'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm, SubmitHandler } from 'react-hook-form'
 import { customerSchema, CustomerFormData } from '@renderer/lib/validations/customer.validation'
-import { exportToPDF } from '@renderer/lib/export'
 import {
-  CalendarIcon,
-  FileText,
-  MoreVertical,
   Pencil,
-  RefreshCw,
   Trash2,
   Wallet
 } from 'lucide-react'
 
 const PAYMENT_METHODS = ['Cash', 'Card', 'Bank Transfer']
-
-interface CustomerReportRow {
-  id: string
-  name: string
-  phone: string
-  totalAmount: number
-  paidAmount: number
-  pendingAmount: number
-  salesCount: number
-}
-
-const quickRanges = [
-  {
-    label: 'Today',
-    getRange: () => {
-      const today = new Date()
-      return { from: startOfDay(today), to: endOfDay(today) }
-    }
-  },
-  {
-    label: 'This Week',
-    getRange: () => {
-      const today = new Date()
-      return {
-        from: startOfWeek(today, { weekStartsOn: 1 }),
-        to: endOfWeek(today, { weekStartsOn: 1 })
-      }
-    }
-  },
-  {
-    label: 'This Month',
-    getRange: () => {
-      const today = new Date()
-      return { from: startOfMonth(today), to: endOfMonth(today) }
-    }
-  }
-]
 
 export default function CustomersPage() {
   const [page, setPage] = useState(1)
@@ -118,15 +51,7 @@ export default function CustomersPage() {
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null)
   const [deleteId, setDeleteId] = useState<string | null>(null)
 
-  const [range, setRange] = useState<DateRange | undefined>()
-  const [reportRange, setReportRange] = useState<DateRange | undefined>()
-  const [reportRows, setReportRows] = useState<CustomerReportRow[]>([])
-  const [reportTotals, setReportTotals] = useState({
-    totalAmount: 0,
-    totalPaid: 0,
-    totalPending: 0
-  })
-  const [isReportLoading, setIsReportLoading] = useState(false)
+
 
   const [paymentAmount, setPaymentAmount] = useState('')
   const [paymentMethod, setPaymentMethod] = useState('Cash')
@@ -167,139 +92,15 @@ export default function CustomersPage() {
     loadCustomers()
   }, [currentStore?._id, page, pageSize, searchTerm])
 
-  useEffect(() => {
-    if (!currentStore?._id) return
-    const initialRange = quickRanges[2].getRange()
-    setRange(initialRange)
-    void generateReport(initialRange)
-  }, [currentStore?._id])
 
-  const rangeLabel = useMemo(() => {
-    if (!reportRange?.from) return 'Select dates'
-    const fromLabel = format(reportRange.from, 'MMM dd, yyyy')
-    if (!reportRange.to || reportRange.from.getTime() === reportRange.to.getTime()) {
-      return fromLabel
-    }
-    return `${fromLabel} - ${format(reportRange.to, 'MMM dd, yyyy')}`
-  }, [reportRange])
 
-  const formatCurrency = (value: number) => `Rs. ${value.toLocaleString()}`
 
-  const generateReport = async (selectedRange: DateRange | undefined = range) => {
-    if (!currentStore?._id || !selectedRange?.from) return
-
-    const start = startOfDay(selectedRange.from)
-    const end = endOfDay(selectedRange.to || selectedRange.from)
-
-    setIsReportLoading(true)
-    setReportRange({ from: start, to: end })
-
-    try {
-      const result = await window.api.sales.getReport({
-        storeId: currentStore._id,
-        startDate: start.toISOString(),
-        endDate: end.toISOString(),
-        groupBy: 'day'
-      })
-
-      if (!result.success) {
-        toast.error(result.error || 'Failed to generate report')
-        return
-      }
-
-      const sales = (result.data?.sales || []) as any[]
-      const totalsByCustomer = new Map<string, CustomerReportRow>()
-
-      sales.forEach((sale) => {
-        const customer = sale.customer as any
-        const customerId = customer?._id || sale.customer
-        if (!customerId) return
-
-        const key = String(customerId)
-        const totalAmount = Number(sale.totalAmount || 0)
-        const paidAmount = Number(sale.paidAmount || 0)
-        const pendingAmount = Math.max(0, totalAmount - paidAmount)
-
-        const entry = totalsByCustomer.get(key)
-        if (entry) {
-          entry.totalAmount += totalAmount
-          entry.paidAmount += paidAmount
-          entry.pendingAmount += pendingAmount
-          entry.salesCount += 1
-          return
-        }
-
-        totalsByCustomer.set(key, {
-          id: key,
-          name: customer?.name || 'Customer',
-          phone: customer?.phone || '',
-          totalAmount,
-          paidAmount,
-          pendingAmount,
-          salesCount: 1
-        })
-      })
-
-      const rows = Array.from(totalsByCustomer.values()).sort(
-        (a, b) => b.pendingAmount - a.pendingAmount
-      )
-
-      const totals = rows.reduce(
-        (acc, row) => {
-          acc.totalAmount += row.totalAmount
-          acc.totalPaid += row.paidAmount
-          acc.totalPending += row.pendingAmount
-          return acc
-        },
-        { totalAmount: 0, totalPaid: 0, totalPending: 0 }
-      )
-
-      setReportRows(rows)
-      setReportTotals(totals)
-    } catch (error: any) {
-      toast.error(error?.message || 'Failed to generate report')
-    } finally {
-      setIsReportLoading(false)
-    }
-  }
-
-  const handleDownloadReport = () => {
-    if (!reportRows.length) {
-      toast.error('No report data to download')
-      return
-    }
-
-    const exportData = reportRows.map((row) => ({
-      Customer: row.name,
-      Phone: row.phone || '-',
-      'Total Amount': formatCurrency(row.totalAmount),
-      'Paid Amount': formatCurrency(row.paidAmount),
-      'Pending Amount': formatCurrency(row.pendingAmount),
-      'Sales Count': row.salesCount
-    }))
-
-    exportData.push({
-      Customer: 'TOTAL',
-      Phone: '',
-      'Total Amount': formatCurrency(reportTotals.totalAmount),
-      'Paid Amount': formatCurrency(reportTotals.totalPaid),
-      'Pending Amount': formatCurrency(reportTotals.totalPending),
-      'Sales Count': reportRows.reduce((acc, row) => acc + row.salesCount, 0)
-    })
-
-    exportToPDF(
-      exportData,
-      `customer_report_${format(new Date(), 'yyyyMMdd')}`,
-      `Customer Report (${rangeLabel})`
-    )
-  }
 
   const form = useForm<CustomerFormData>({
     resolver: zodResolver(customerSchema) as any,
     defaultValues: {
       name: '',
       phone: '',
-      email: '',
       openingBalance: 0
     }
   })
@@ -314,7 +115,6 @@ export default function CustomersPage() {
       const createPayload = {
         name: values.name,
         phone: values.phone,
-        email: values.email || undefined,
         store: currentStore._id,
         balance: values.openingBalance
       }
@@ -322,7 +122,6 @@ export default function CustomersPage() {
       const updatePayload = {
         name: values.name,
         phone: values.phone,
-        email: values.email || undefined,
         store: currentStore._id
       }
 
@@ -334,7 +133,7 @@ export default function CustomersPage() {
         toast.success(`Customer ${editingCustomer ? 'updated' : 'created'} successfully`)
         setIsFormOpen(false)
         setEditingCustomer(null)
-        form.reset({ name: '', phone: '', email: '', openingBalance: 0 })
+        form.reset({ name: '', phone: '', openingBalance: 0 })
         loadCustomers()
       } else {
         toast.error(result.error || 'Failed to save customer')
@@ -348,7 +147,7 @@ export default function CustomersPage() {
 
   const openAdd = () => {
     setEditingCustomer(null)
-    form.reset({ name: '', phone: '', email: '', openingBalance: 0 })
+    form.reset({ name: '', phone: '', openingBalance: 0 })
     setIsFormOpen(true)
   }
 
@@ -357,7 +156,6 @@ export default function CustomersPage() {
     form.reset({
       name: customer.name,
       phone: customer.phone,
-      email: customer.email || '',
       openingBalance: customer.balance || 0
     })
     setIsFormOpen(true)
@@ -444,202 +242,39 @@ export default function CustomersPage() {
       header: 'Actions',
       accessor: '_id',
       render: (item: any) => (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="hover:bg-accent h-8 w-8">
-              <MoreVertical className="w-4 h-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="bg-popover border-border">
-            <DropdownMenuItem
-              onClick={() => openPaymentDialog(item)}
-              className="cursor-pointer focus:bg-[#4ade80] focus:text-black"
-              disabled={!item.balance || item.balance <= 0}
-            >
-              <Wallet className="w-4 h-4 mr-2" />
-              Record Payment
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => openEdit(item)}
-              className="cursor-pointer focus:bg-accent"
-            >
-              <Pencil className="w-4 h-4 mr-2" />
-              Edit
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => setDeleteId(item._id)}
-              className="cursor-pointer text-red-500 focus:bg-red-500 focus:text-white"
-            >
-              <Trash2 className="w-4 h-4 mr-2" />
-              Delete
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 hover:bg-accent hover:text-[#E8705A]"
+            onClick={() => openPaymentDialog(item)}
+            disabled={!item.balance || item.balance <= 0}
+          >
+            <Wallet className="w-4 h-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 hover:bg-accent hover:text-[#E8705A]"
+            onClick={() => openEdit(item)}
+          >
+            <Pencil className="w-4 h-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 hover:bg-red-500/10 hover:text-red-500"
+            onClick={() => setDeleteId(item._id)}
+          >
+            <Trash2 className="w-4 h-4" />
+          </Button>
+        </div>
       )
     }
   ]
 
   return (
     <>
-      <Card className="border-border mb-6">
-        <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="space-y-1">
-            <CardTitle className="text-lg font-black">Customer Report</CardTitle>
-            <p className="text-xs text-muted-foreground">
-              Track customer totals and pending balances by date range.
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="space-y-1">
-              <Label className="text-[10px] font-semibold uppercase text-muted-foreground">
-                Date Range
-              </Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className="h-10 border-border">
-                    <CalendarIcon className="w-4 h-4 mr-2" />
-                    {rangeLabel}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar mode="range" selected={range} onSelect={setRange} numberOfMonths={2} />
-                </PopoverContent>
-              </Popover>
-            </div>
-            <Button
-              variant="outline"
-              className="h-10 border-border"
-              onClick={() => void generateReport()}
-            >
-              <RefreshCw className="w-4 h-4 mr-2" />
-              Refresh
-            </Button>
-            <Button
-              className="h-10 bg-[#4ade80] text-black hover:bg-[#22c55e]"
-              onClick={handleDownloadReport}
-            >
-              <FileText className="w-4 h-4 mr-2" />
-              Download PDF
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex flex-wrap gap-2">
-            {quickRanges.map((quick) => (
-              <Button
-                key={quick.label}
-                type="button"
-                variant="outline"
-                className="h-9 text-xs font-semibold border-border"
-                onClick={() => {
-                  const nextRange = quick.getRange()
-                  setRange(nextRange)
-                  void generateReport(nextRange)
-                }}
-              >
-                {quick.label}
-              </Button>
-            ))}
-          </div>
-
-          <div className="rounded-xl border border-border overflow-hidden">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Customer</TableHead>
-                  <TableHead className="text-center">Sales</TableHead>
-                  <TableHead className="text-right">Total</TableHead>
-                  <TableHead className="text-right">Paid</TableHead>
-                  <TableHead className="text-right">Pending</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {isReportLoading ? (
-                  <TableRow>
-                    <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
-                      Loading report...
-                    </TableCell>
-                  </TableRow>
-                ) : reportRows.length > 0 ? (
-                  reportRows.map((row) => (
-                    <TableRow key={row.id}>
-                      <TableCell>
-                        <div className="flex flex-col">
-                          <span className="font-semibold text-foreground">{row.name}</span>
-                          <span className="text-[10px] text-muted-foreground uppercase">
-                            {row.phone || 'No phone'}
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-center font-semibold">{row.salesCount}</TableCell>
-                      <TableCell className="text-right font-semibold">
-                        {formatCurrency(row.totalAmount)}
-                      </TableCell>
-                      <TableCell className="text-right font-semibold text-emerald-600">
-                        {formatCurrency(row.paidAmount)}
-                      </TableCell>
-                      <TableCell className="text-right font-semibold text-red-500">
-                        {formatCurrency(row.pendingAmount)}
-                      </TableCell>
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
-                      No credit sales found for this range.
-                    </TableCell>
-                  </TableRow>
-                )}
-                {reportRows.length > 0 && (
-                  <TableRow className="bg-muted/30">
-                    <TableCell className="font-bold">Totals</TableCell>
-                    <TableCell className="text-center font-bold">
-                      {reportRows.reduce((acc, row) => acc + row.salesCount, 0)}
-                    </TableCell>
-                    <TableCell className="text-right font-bold">
-                      {formatCurrency(reportTotals.totalAmount)}
-                    </TableCell>
-                    <TableCell className="text-right font-bold text-emerald-600">
-                      {formatCurrency(reportTotals.totalPaid)}
-                    </TableCell>
-                    <TableCell className="text-right font-bold text-red-500">
-                      {formatCurrency(reportTotals.totalPending)}
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <div className="rounded-lg border border-border p-4 bg-muted/20">
-              <div className="text-xs font-semibold uppercase text-muted-foreground">
-                Total Amount
-              </div>
-              <div className="text-lg font-black text-foreground">
-                {formatCurrency(reportTotals.totalAmount)}
-              </div>
-            </div>
-            <div className="rounded-lg border border-border p-4 bg-muted/20">
-              <div className="text-xs font-semibold uppercase text-muted-foreground">
-                Total Paid
-              </div>
-              <div className="text-lg font-black text-emerald-600">
-                {formatCurrency(reportTotals.totalPaid)}
-              </div>
-            </div>
-            <div className="rounded-lg border border-border p-4 bg-muted/20">
-              <div className="text-xs font-semibold uppercase text-muted-foreground">
-                Pending Balance
-              </div>
-              <div className="text-lg font-black text-red-500">
-                {formatCurrency(reportTotals.totalPending)}
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
       <DataPage
         title="Customers"
         description="Manage customer balances and credit payments."
@@ -688,19 +323,6 @@ export default function CustomersPage() {
                     <FormLabel>Phone</FormLabel>
                     <FormControl>
                       <Input {...field} placeholder="Phone number" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email (Optional)</FormLabel>
-                    <FormControl>
-                      <Input {...field} placeholder="Email address" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -772,11 +394,10 @@ export default function CustomersPage() {
                     key={method}
                     type="button"
                     variant="outline"
-                    className={`h-10 text-xs font-semibold ${
-                      paymentMethod === method
-                        ? 'text-[#4ade80] border-[#4ade80] hover:bg-[#4ade80] hover:text-[#4ade80]'
-                        : 'bg-transparent'
-                    }`}
+                    className={`h-10 text-xs font-semibold ${paymentMethod === method
+                      ? 'text-[#E8705A] border-[#E8705A] hover:bg-[#E8705A] hover:text-[#E8705A]'
+                      : 'bg-transparent'
+                      }`}
                     onClick={() => setPaymentMethod(method)}
                   >
                     {method}

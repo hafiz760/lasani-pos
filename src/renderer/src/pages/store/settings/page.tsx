@@ -78,11 +78,11 @@ export default function SettingsPage() {
 
       <div className="grid gap-6">
         <Card
-          className="bg-card border-border text-foreground hover:border-[#4ade80] transition-colors cursor-pointer group shadow-xl shadow-black/5"
+          className="bg-card border-border text-foreground hover:border-[#E8705A] transition-colors cursor-pointer group shadow-xl shadow-black/5"
           onClick={() => navigate('/dashboard/settings/profile')}
         >
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 font-black uppercase text-lg group-hover:text-[#4ade80] transition-colors">
+            <CardTitle className="flex items-center gap-2 font-black uppercase text-lg group-hover:text-[#E8705A] transition-colors">
               <User className="w-5 h-5" />
               My Profile
             </CardTitle>
@@ -95,7 +95,7 @@ export default function SettingsPage() {
         <Card className="bg-card border-border text-foreground shadow-xl shadow-black/5">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 font-black uppercase text-lg">
-              <Lock className="w-5 h-5 text-[#4ade80]" />
+              <Lock className="w-5 h-5 text-[#E8705A]" />
               Security / Change Password
             </CardTitle>
             <CardDescription className="text-muted-foreground text-xs font-bold uppercase opacity-70">
@@ -117,7 +117,7 @@ export default function SettingsPage() {
                   required
                   value={formData.currentPassword}
                   onChange={(e) => setFormData({ ...formData, currentPassword: e.target.value })}
-                  className="bg-muted/30 border-border focus-visible:ring-[#4ade80] font-bold h-11"
+                  className="bg-muted/30 border-border focus-visible:ring-[#E8705A] font-bold h-11"
                 />
               </div>
               <div className="space-y-2">
@@ -133,7 +133,7 @@ export default function SettingsPage() {
                   required
                   value={formData.newPassword}
                   onChange={(e) => setFormData({ ...formData, newPassword: e.target.value })}
-                  className="bg-muted/30 border-border focus-visible:ring-[#4ade80] font-bold h-11"
+                  className="bg-muted/30 border-border focus-visible:ring-[#E8705A] font-bold h-11"
                 />
               </div>
               <div className="space-y-2">
@@ -149,13 +149,13 @@ export default function SettingsPage() {
                   required
                   value={formData.confirmPassword}
                   onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                  className="bg-muted/30 border-border focus-visible:ring-[#4ade80] font-bold h-11"
+                  className="bg-muted/30 border-border focus-visible:ring-[#E8705A] font-bold h-11"
                 />
               </div>
               <Button
                 type="submit"
                 disabled={isSaving}
-                className="bg-[#4ade80] hover:bg-[#22c55e] text-black font-black uppercase text-xs tracking-widest mt-4 h-11 px-6 shadow-lg shadow-[#4ade80]/20"
+                className="bg-[#E8705A] hover:bg-[#D4604C] text-black font-black uppercase text-xs tracking-widest mt-4 h-11 px-6 shadow-lg shadow-[#E8705A]/20"
               >
                 {isSaving ? (
                   <Loader2 className="w-4 h-4 animate-spin mr-2" />

@@ -48,7 +48,7 @@ export default function SalesReportPrintPreviewPage() {
             Report Preview
           </CardTitle>
           <Button
-            className="bg-[#4ade80] text-black hover:bg-[#22c55e] font-black h-10"
+            className="bg-[#E8705A] text-white hover:bg-[#D4604C] font-black h-10"
             onClick={handlePrint}
           >
             <Printer className="h-4 w-4 mr-2" />

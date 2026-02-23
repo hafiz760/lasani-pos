@@ -3,13 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { DataPage } from '@renderer/components/shared/data-page'
 import { LoadingButton } from '@renderer/components/ui/loading-button'
 import { Button } from '@renderer/components/ui/button'
-import { MoreVertical, Edit, Trash2, Mail, MapPin, Eye, Wallet } from 'lucide-react'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger
-} from '@renderer/components/ui/dropdown-menu'
+import { Edit, Trash2, Mail, MapPin, Wallet } from 'lucide-react'
+
 import {
   Dialog,
   DialogContent,
@@ -306,7 +301,7 @@ export default function SuppliersPage() {
       header: 'Balance',
       accessor: 'currentBalance',
       render: (item: any) => (
-        <div className={`font-bold ${item.currentBalance > 0 ? 'text-red-400' : 'text-[#4ade80]'}`}>
+        <div className={`font-bold ${item.currentBalance > 0 ? 'text-red-400' : 'text-[#E8705A]'}`}>
           Rs. {(item.currentBalance || 0).toLocaleString()}
         </div>
       )
@@ -315,47 +310,33 @@ export default function SuppliersPage() {
       header: 'Actions',
       accessor: '_id',
       render: (item: any) => (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="hover:bg-accent">
-              <MoreVertical className="w-4 h-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent
-            className="bg-popover border-border text-popover-foreground"
-            align="end"
+        <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 hover:bg-accent hover:text-[#E8705A]"
+            onClick={() => openPaymentDialog(item)}
+            disabled={!item.currentBalance || item.currentBalance <= 0}
           >
-            <DropdownMenuItem
-              onClick={() => openPaymentDialog(item)}
-              className="focus:bg-[#4ade80] focus:text-black cursor-pointer"
-              disabled={!item.currentBalance || item.currentBalance <= 0}
-            >
-              <Wallet className="w-4 h-4 mr-2" />
-              Record Payment
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => navigate(`/dashboard/purchases/suppliers/${item._id}`)}
-              className="focus:bg-[#4ade80] focus:text-black cursor-pointer"
-            >
-              <Eye className="w-4 h-4 mr-2" />
-              View Details
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => openEdit(item)}
-              className="focus:bg-[#4ade80] focus:text-black cursor-pointer"
-            >
-              <Edit className="w-4 h-4 mr-2" />
-              Edit
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => setDeleteId(item._id)}
-              className="focus:bg-red-500 focus:text-white cursor-pointer text-red-400"
-            >
-              <Trash2 className="w-4 h-4 mr-2" />
-              Delete
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+            <Wallet className="w-4 h-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 hover:bg-accent hover:text-[#E8705A]"
+            onClick={() => openEdit(item)}
+          >
+            <Edit className="w-4 h-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 hover:bg-red-500/10 hover:text-red-500"
+            onClick={() => setDeleteId(item._id)}
+          >
+            <Trash2 className="w-4 h-4" />
+          </Button>
+        </div>
       )
     }
   ]
@@ -395,6 +376,7 @@ export default function SuppliersPage() {
           setSearchTerm(term)
           setPage(1)
         }}
+        onRowClick={(item) => navigate(`/dashboard/purchases/suppliers/${item._id}`)}
       />
 
       <Dialog
@@ -507,7 +489,7 @@ export default function SuppliersPage() {
                   type="submit"
                   isLoading={isSubmitting}
                   loadingText={editingSupplier ? 'Updating...' : 'Creating...'}
-                  className="bg-[#4ade80] hover:bg-[#22c55e] text-black font-semibold"
+                  className="bg-[#E8705A] hover:bg-[#D4604C] text-black font-semibold"
                 >
                   {editingSupplier ? 'Update Supplier' : 'Create Supplier'}
                 </LoadingButton>

@@ -181,7 +181,7 @@ export default function AttributesPage() {
 
   const openAdd = () => {
     setEditingAttribute(null)
-    form.reset({ name: '', type: 'FABRIC', value: '#4ade80' })
+    form.reset({ name: '', type: 'FABRIC', value: '#E8705A' })
     setIsFormOpen(true)
   }
 
@@ -194,7 +194,7 @@ export default function AttributesPage() {
       case 'COLLECTION':
         return 'bg-amber-500/10 text-amber-500 border-amber-500/20'
       case 'PIECE_COUNT':
-        return 'bg-[#4ade80]/10 text-[#4ade80] border-[#4ade80]/20'
+        return 'bg-[#E8705A]/10 text-[#E8705A] border-[#E8705A]/20'
       case 'COLOR':
         return 'bg-pink-500/10 text-pink-500 border-pink-500/20'
       case 'SIZE':
@@ -240,7 +240,7 @@ export default function AttributesPage() {
           >
             <DropdownMenuItem
               onClick={() => openEdit(item)}
-              className="focus:bg-[#4ade80] focus:text-black cursor-pointer"
+              className="focus:bg-[#E8705A] focus:text-white cursor-pointer"
             >
               <Edit className="w-4 h-4 mr-2" />
               Edit
@@ -355,13 +355,13 @@ export default function AttributesPage() {
                       <FormControl>
                         <div className="flex flex-col gap-4 items-center p-4 bg-muted/30 rounded-lg border border-border">
                           <HexColorPicker
-                            color={field.value || '#4ade80'}
+                            color={field.value || '#E8705A'}
                             onChange={field.onChange}
                           />
                           <div className="flex items-center gap-3 w-full">
                             <div
                               className="w-10 h-10 rounded-lg border border-white/20 shadow-md shrink-0"
-                              style={{ backgroundColor: field.value || '#4ade80' }}
+                              style={{ backgroundColor: field.value || '#E8705A' }}
                             />
                             <Input
                               {...field}
@@ -389,7 +389,7 @@ export default function AttributesPage() {
                   type="submit"
                   isLoading={isSubmitting}
                   loadingText={editingAttribute ? 'Updating...' : 'Creating...'}
-                  className="bg-[#4ade80] hover:bg-[#22c55e] text-black font-semibold"
+                  className="bg-[#E8705A] hover:bg-[#D4604C] text-black font-semibold"
                 >
                   {editingAttribute ? 'Update' : 'Create'}
                 </LoadingButton>

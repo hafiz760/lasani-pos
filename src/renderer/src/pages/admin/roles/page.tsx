@@ -134,7 +134,7 @@ export default function RolesPage() {
     if (isLoading) {
         return (
             <div className="flex items-center justify-center h-[60vh]">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#4ade80]"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#E8705A]"></div>
             </div>
         );
     }
@@ -162,7 +162,7 @@ export default function RolesPage() {
                     </div>
                     <Button
                         onClick={handleOpenAdd}
-                        className="bg-[#4ade80] hover:bg-[#22c55e] text-black font-semibold h-10"
+                        className="bg-[#E8705A] hover:bg-[#D4604C] text-black font-semibold h-10"
                     >
                         <Plus className="w-4 h-4 mr-2" />
                         Add Role
@@ -178,13 +178,13 @@ export default function RolesPage() {
                         onClick={() => handleManagePermissions(role._id)}
                     >
                         <CardHeader className="flex flex-row items-center gap-4 space-y-0 pb-2">
-                            <Avatar className="h-12 w-12 border border-border group-hover:border-[#4ade80]/50 transition-colors">
-                                <AvatarFallback className="bg-[#4ade80]/10 text-[#4ade80] font-bold">
+                            <Avatar className="h-12 w-12 border border-border group-hover:border-[#E8705A]/50 transition-colors">
+                                <AvatarFallback className="bg-[#E8705A]/10 text-[#E8705A] font-bold">
                                     <Shield className="h-6 w-6" />
                                 </AvatarFallback>
                             </Avatar>
                             <div className="flex-1 overflow-hidden">
-                                <CardTitle className="text-base truncate group-hover:text-[#4ade80] transition-colors">
+                                <CardTitle className="text-base truncate group-hover:text-[#E8705A] transition-colors">
                                     {role.name}
                                 </CardTitle>
                                 <p className="text-xs text-muted-foreground truncate">
@@ -218,7 +218,7 @@ export default function RolesPage() {
                                 {role.description || "No description provided."}
                             </p>
                             <div className="mt-4 flex items-center gap-2">
-                                <Badge variant="outline" className="bg-[#4ade80]/10 text-[#4ade80] border-[#4ade80]/20">
+                                <Badge variant="outline" className="bg-[#E8705A]/10 text-[#E8705A] border-[#E8705A]/20">
                                     System Role
                                 </Badge>
                                 <Badge variant="outline" className="text-[10px] uppercase font-bold tracking-wider">
@@ -247,7 +247,7 @@ export default function RolesPage() {
                                 placeholder="e.g. Sales Manager"
                                 value={roleName}
                                 onChange={(e) => setRoleName(e.target.value)}
-                                className="bg-muted/50 border-border h-12 text-lg focus:ring-[#4ade80]"
+                                className="bg-muted/50 border-border h-12 text-lg focus:ring-[#E8705A]"
                             />
                         </div>
                         <div className="space-y-2">
@@ -257,7 +257,7 @@ export default function RolesPage() {
                                 placeholder="What is the purpose of this role?"
                                 value={roleDescription}
                                 onChange={(e) => setRoleDescription(e.target.value)}
-                                className="bg-muted/50 border-border min-h-[120px] resize-none focus:ring-[#4ade80]"
+                                className="bg-muted/50 border-border min-h-[120px] resize-none focus:ring-[#E8705A]"
                             />
                         </div>
                     </div>
@@ -270,7 +270,7 @@ export default function RolesPage() {
                             onClick={handleSubmit}
                             isLoading={isSubmitting}
                             loadingText={editingRole ? "Updating..." : "Creating..."}
-                            className="bg-[#4ade80] hover:bg-[#22c55e] text-black font-semibold h-10 px-8"
+                            className="bg-[#E8705A] hover:bg-[#D4604C] text-black font-semibold h-10 px-8"
                         >
                             {editingRole ? "Save Details" : "Create Role"}
                         </LoadingButton>

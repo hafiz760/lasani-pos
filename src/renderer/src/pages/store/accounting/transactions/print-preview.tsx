@@ -97,7 +97,7 @@ export default function TransactionsPrintPreviewPage() {
             )}</div>
             <div style="font-size: 10px; color: #6b7280; margin-top: 2px;">Money returned</div>
           </div>
-          <div style="border: 2px solid #4ade80; border-radius: 12px; padding: 12px; background: #f0fdf4;">
+          <div style="border: 2px solid #E8705A; border-radius: 12px; padding: 12px; background: #f0fdf4;">
             <div style="font-size: 11px; text-transform: uppercase; color: #16a34a; font-weight: 700;">Net Profit</div>
             <div style="font-size: 18px; font-weight: 700; color: ${totals.netProfit >= 0 ? '#16a34a' : '#dc2626'};">${formatCurrency(totals.netProfit)}</div>
             <div style="font-size: 10px; color: #6b7280; margin-top: 2px;">Sales - Expenses - Refunds</div>
@@ -204,7 +204,7 @@ export default function TransactionsPrintPreviewPage() {
               Download PDF
             </Button>
             <Button
-              className="h-10 bg-[#4ade80] text-black hover:bg-[#22c55e]"
+              className="h-10 bg-[#E8705A] text-white hover:bg-[#D4604C]"
               onClick={() => {
                 if (!printHtml) return
                 void printContent({ title: 'Transactions Report', content: printHtml })
@@ -273,12 +273,12 @@ export default function TransactionsPrintPreviewPage() {
                   </div>
 
                   {/* Net Profit */}
-                  <div className="rounded-xl border-2 border-[#4ade80]/50 bg-[#4ade80]/10 p-5">
+                  <div className="rounded-xl border-2 border-[#E8705A]/50 bg-[#E8705A]/10 p-5">
                     <div className="flex items-center justify-between mb-2">
-                      <div className="text-xs font-black uppercase text-[#16a34a] dark:text-[#4ade80]">
+                      <div className="text-xs font-black uppercase text-[#16a34a] dark:text-[#E8705A]">
                         Net Profit
                       </div>
-                      <div className="h-8 w-8 rounded-full bg-[#4ade80]/30 flex items-center justify-center">
+                      <div className="h-8 w-8 rounded-full bg-[#E8705A]/30 flex items-center justify-center">
                         <span className="text-[#16a34a] text-lg">💰</span>
                       </div>
                     </div>

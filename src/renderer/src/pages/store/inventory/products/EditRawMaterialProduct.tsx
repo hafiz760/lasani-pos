@@ -297,7 +297,7 @@ export default function EditRawMaterialProduct() {
   if (isLoading || isCheckingSales) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#4ade80]"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#E8705A]"></div>
       </div>
     )
   }
@@ -512,7 +512,7 @@ export default function EditRawMaterialProduct() {
             </Button>
             <Button
               type="submit"
-              className="bg-[#4ade80] hover:bg-[#22c55e] text-black font-semibold"
+              className="bg-[#E8705A] hover:bg-[#D4604C] text-black font-semibold"
               disabled={isSaving}
             >
               {isSaving ? (

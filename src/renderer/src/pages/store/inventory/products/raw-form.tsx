@@ -294,8 +294,8 @@ export default function RawProductFormPage() {
           autoComplete="off"
         >
           {/* Material Calculation Card */}
-          <div className="bg-card border border-[#4ade80]/30 rounded-lg p-6 bg-gradient-to-br from-background to-[#4ade80]/5">
-            <h2 className="text-lg font-semibold mb-4 text-[#4ade80]">
+          <div className="bg-card border border-[#E8705A]/30 rounded-lg p-6 bg-gradient-to-br from-background to-[#E8705A]/5">
+            <h2 className="text-lg font-semibold mb-4 text-[#E8705A]">
               Material Calculation (Meters → Suits)
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -327,11 +327,11 @@ export default function RawProductFormPage() {
                 )}
               />
 
-              <div className="flex flex-col justify-center p-4 bg-[#4ade80]/10 border border-[#4ade80]/20 rounded-xl">
+              <div className="flex flex-col justify-center p-4 bg-[#E8705A]/10 border border-[#E8705A]/20 rounded-xl">
                 <p className="text-xs text-muted-foreground uppercase font-semibold">
                   Calculated Suits
                 </p>
-                <p className="text-3xl font-black text-[#4ade80]">
+                <p className="text-3xl font-black text-[#E8705A]">
                   {form.watch('stockLevel')} Suits
                 </p>
               </div>
@@ -342,7 +342,7 @@ export default function RawProductFormPage() {
             <div className="lg:col-span-2 space-y-8">
               {/* Basic Information */}
               <div className="bg-card border border-border rounded-lg p-6">
-                <h2 className="text-lg font-semibold mb-4 text-[#4ade80]">Basic Information</h2>
+                <h2 className="text-lg font-semibold mb-4 text-[#E8705A]">Basic Information</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <FormField
                     control={form.control}
@@ -437,7 +437,7 @@ export default function RawProductFormPage() {
                 </div>
               </div>
               <div className="bg-card border border-border rounded-lg p-6">
-                <h2 className="text-lg font-semibold mb-4 text-[#4ade80]">
+                <h2 className="text-lg font-semibold mb-4 text-[#E8705A]">
                   Cloth Details (Optional)
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -524,7 +524,7 @@ export default function RawProductFormPage() {
             <div className="space-y-8">
               {/* Images */}
               <div className="bg-card border border-border rounded-lg p-6">
-                <h2 className="text-lg font-semibold mb-4 text-[#4ade80]">Product Images</h2>
+                <h2 className="text-lg font-semibold mb-4 text-[#E8705A]">Product Images</h2>
                 <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     {imagePreviews.map((url, index) => (
@@ -542,7 +542,7 @@ export default function RawProductFormPage() {
                         </button>
                       </div>
                     ))}
-                    <label className="aspect-square rounded-lg border-2 border-dashed border-muted-foreground/50 hover:border-[#4ade80] hover:bg-[#4ade80]/5 flex flex-col items-center justify-center cursor-pointer transition-all">
+                    <label className="aspect-square rounded-lg border-2 border-dashed border-muted-foreground/50 hover:border-[#E8705A] hover:bg-[#E8705A]/5 flex flex-col items-center justify-center cursor-pointer transition-all">
                       <Upload className="w-8 h-8 text-muted-foreground mb-2" />
                       <span className="text-xs text-muted-foreground">Add Image</span>
                       <input

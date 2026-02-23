@@ -2,12 +2,10 @@ import { useState, useEffect } from "react";
 import {
   Plus,
   Search,
-  MoreVertical,
   Truck,
   Clock,
   CheckCircle2,
   Trash2,
-  Eye,
 } from "lucide-react";
 import { Button } from "@renderer/components/ui/button";
 import { useNavigate } from "react-router-dom";
@@ -20,12 +18,7 @@ import {
   TableHeader,
   TableRow,
 } from "@renderer/components/ui/table";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@renderer/components/ui/dropdown-menu";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@renderer/components/ui/card";
 import { Badge } from "@renderer/components/ui/badge";
 import { toast } from "sonner";
@@ -149,7 +142,7 @@ export default function PurchaseOrdersPage() {
         </div>
         <Button
           onClick={() => navigate("/dashboard/purchases/orders/create")}
-          className="bg-[#4ade80] hover:bg-[#22c55e] text-black font-semibold"
+          className="bg-[#E8705A] hover:bg-[#D4604C] text-black font-semibold"
         >
           <Plus className="w-4 h-4 mr-2" />
           Create Order
@@ -175,7 +168,7 @@ export default function PurchaseOrdersPage() {
             <CardTitle className="text-xs font-medium text-gray-400 uppercase">
               Received (All Time)
             </CardTitle>
-            <CheckCircle2 className="w-4 h-4 text-[#4ade80]" />
+            <CheckCircle2 className="w-4 h-4 text-[#E8705A]" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
@@ -259,11 +252,12 @@ export default function PurchaseOrdersPage() {
                 orders.map((order: any) => (
                   <TableRow
                     key={order._id}
-                    className="hover:bg-accent border-border"
+                    className="hover:bg-accent border-border cursor-pointer"
+                    onClick={() => navigate(`/dashboard/purchases/orders/${order._id}`)}
                   >
                     <TableCell className="font-medium">
                       <div className="flex flex-col">
-                        <span className="font-bold text-[#4ade80]">
+                        <span className="font-bold text-[#E8705A]">
                           {order.poNumber}
                         </span>
                         <span className="text-[10px] text-muted-foreground">
@@ -277,13 +271,13 @@ export default function PurchaseOrdersPage() {
                     <TableCell className="text-sm text-muted-foreground">
                       {order.purchaseDate ? format(new Date(order.purchaseDate), "MMM dd, yyyy") : "N/A"}
                     </TableCell>
-                    <TableCell className="text-sm font-bold text-[#4ade80]">
+                    <TableCell className="text-sm font-bold text-[#E8705A]">
                       Rs. {(order.totalAmount || 0).toLocaleString()}
                     </TableCell>
                     <TableCell>
                       <Badge
                         className={`${order.status === "RECEIVED"
-                          ? "bg-[#4ade80]/10 text-[#4ade80] border-[#4ade80]/20"
+                          ? "bg-[#E8705A]/10 text-[#E8705A] border-[#E8705A]/20"
                           : order.status === "CONFIRMED"
                             ? "bg-blue-400/10 text-blue-400 border-blue-400/20"
                             : "bg-gray-500/10 text-gray-400 border-gray-500/20"
@@ -293,47 +287,26 @@ export default function PurchaseOrdersPage() {
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
+                      <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
+                        {order.status !== "RECEIVED" && (
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="hover:bg-accent"
+                            className="h-8 w-8 hover:bg-accent hover:text-[#E8705A]"
+                            onClick={() => handleReceive(order._id)}
                           >
-                            <MoreVertical className="w-4 h-4" />
+                            <Truck className="w-4 h-4" />
                           </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent
-                          className="bg-popover border-border text-popover-foreground"
-                          align="end"
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 hover:bg-red-500/10 hover:text-red-500"
+                          onClick={() => handleDelete(order)}
                         >
-                          <DropdownMenuItem
-                            onClick={() =>
-                              navigate(`/dashboard/purchases/orders/${order._id}`)
-                            }
-                            className="focus:bg-[#4ade80] focus:text-black cursor-pointer"
-                          >
-                            <Eye className="w-4 h-4 mr-2" />
-                            View Details
-                          </DropdownMenuItem>
-                          {order.status !== "RECEIVED" && (
-                            <DropdownMenuItem
-                              onClick={() => handleReceive(order._id)}
-                              className="focus:bg-[#4ade80] focus:text-black cursor-pointer"
-                            >
-                              <Truck className="w-4 h-4 mr-2" />
-                              Mark as Received
-                            </DropdownMenuItem>
-                          )}
-                          <DropdownMenuItem
-                            onClick={() => handleDelete(order)}
-                            className="focus:bg-red-500 focus:text-white cursor-pointer text-red-400"
-                          >
-                            <Trash2 className="w-4 h-4 mr-2" />
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))

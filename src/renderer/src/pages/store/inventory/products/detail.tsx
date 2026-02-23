@@ -128,7 +128,7 @@ export default function ProductDetails() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#4ade80]"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#E8705A]"></div>
       </div>
     )
   }
@@ -194,7 +194,7 @@ export default function ProductDetails() {
           </Button>
 
           <Button
-            className="bg-[#4ade80] hover:bg-[#22c55e] text-black font-semibold"
+            className="bg-[#E8705A] hover:bg-[#D4604C] text-black font-semibold"
             onClick={() => setShowRestock(true)}
           >
             <PackagePlus className="w-4 h-4 mr-2" />
@@ -209,12 +209,12 @@ export default function ProductDetails() {
         <Card className="bg-card border-border text-foreground">
           <CardHeader className="pb-2">
             <CardTitle className="text-xs font-medium text-muted-foreground uppercase flex items-center gap-2">
-              <TrendingUp className="w-3 h-3 text-[#4ade80]" />
+              <TrendingUp className="w-3 h-3 text-[#E8705A]" />
               Selling Price
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-[#4ade80]">
+            <div className="text-3xl font-bold text-[#E8705A]">
               Rs. {(product.sellingPrice || 0).toLocaleString()}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
@@ -309,8 +309,8 @@ export default function ProductDetails() {
                       {product.images.map((img: string, i: number) => (
                         <div
                           key={i}
-                          className={`aspect-square rounded-md border-2 overflow-hidden cursor-pointer transition-all hover:border-[#4ade80] ${
-                            i === 0 ? 'border-[#4ade80]' : 'border-border'
+                          className={`aspect-square rounded-md border-2 overflow-hidden cursor-pointer transition-all hover:border-[#E8705A] ${
+                            i === 0 ? 'border-[#E8705A]' : 'border-border'
                           }`}
                         >
                           <img
@@ -462,7 +462,7 @@ export default function ProductDetails() {
               <ScrollArea className="h-[500px]">
                 {isLoadingHistory ? (
                   <div className="p-4 text-center">
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#4ade80] mx-auto"></div>
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#E8705A] mx-auto"></div>
                     <p className="text-xs text-muted-foreground mt-2">Loading history...</p>
                   </div>
                 ) : inventoryHistory.length > 0 ? (
@@ -470,7 +470,7 @@ export default function ProductDetails() {
                     {inventoryHistory.map((entry: any, idx: number) => (
                       <div
                         key={entry._id || idx}
-                        className="border-l-2 border-muted pl-3 pb-3 hover:border-[#4ade80] transition-colors"
+                        className="border-l-2 border-muted pl-3 pb-3 hover:border-[#E8705A] transition-colors"
                       >
                         <div className="flex items-start gap-2">
                           {/* Icon based on entry type */}

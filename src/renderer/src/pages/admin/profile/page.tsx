@@ -166,8 +166,8 @@ export default function ProfilePage() {
         <Card className="border-border bg-card">
           <CardHeader>
             <div className="flex items-center gap-4">
-              <div className="h-12 w-12 rounded-lg bg-[#4ade80]/10 flex items-center justify-center">
-                <Shield className="h-6 w-6 text-[#4ade80]" />
+              <div className="h-12 w-12 rounded-lg bg-[#E8705A]/10 flex items-center justify-center">
+                <Shield className="h-6 w-6 text-[#E8705A]" />
               </div>
               <div>
                 <CardTitle>Personal Information</CardTitle>
@@ -180,7 +180,7 @@ export default function ProfilePage() {
               <form onSubmit={profileForm.handleSubmit(onProfileSubmit)} className="space-y-8 mt-4">
                 <div className="flex flex-col items-center justify-center gap-6 py-4">
                   <div className="relative group">
-                    <Avatar className="h-32 w-32 border-4 border-[#4ade80]/20 transition-transform group-hover:scale-105">
+                    <Avatar className="h-32 w-32 border-4 border-[#E8705A]/20 transition-transform group-hover:scale-105">
                       <AvatarImage src={preview || user?.avatarUrl} className="object-cover" />
                       <AvatarFallback className="bg-muted text-4xl font-bold text-muted-foreground">
                         {user?.fullName?.charAt(0) || 'U'}
@@ -188,7 +188,7 @@ export default function ProfilePage() {
                     </Avatar>
                     <Label
                       htmlFor="avatar"
-                      className="absolute bottom-0 right-0 p-2 bg-[#4ade80] rounded-full cursor-pointer shadow-lg hover:bg-[#22c55e] transition-colors"
+                      className="absolute bottom-0 right-0 p-2 bg-[#E8705A] rounded-full cursor-pointer shadow-lg hover:bg-[#D4604C] transition-colors"
                     >
                       <Upload className="w-5 h-5 text-black" />
                       <Input
@@ -203,7 +203,7 @@ export default function ProfilePage() {
                   </div>
                   <div className="text-center">
                     <p className="text-sm font-medium text-foreground">{user?.email}</p>
-                    <p className="text-xs text-muted-foreground uppercase mt-1 tracking-wider font-bold text-[#4ade80]">
+                    <p className="text-xs text-muted-foreground uppercase mt-1 tracking-wider font-bold text-[#E8705A]">
                       {user?.globalRole === 'ADMIN' ? 'Super Admin' : 'Store User'}
                     </p>
                   </div>
@@ -219,7 +219,7 @@ export default function ProfilePage() {
                         <FormControl>
                           <Input
                             {...field}
-                            className="bg-muted/50 border-border focus:border-[#4ade80]"
+                            className="bg-muted/50 border-border focus:border-[#E8705A]"
                             placeholder="Enter your full name"
                           />
                         </FormControl>
@@ -243,7 +243,7 @@ export default function ProfilePage() {
                     type="submit"
                     isLoading={isUpdatingProfile}
                     loadingText="Saving Changes..."
-                    className="bg-[#4ade80] hover:bg-[#22c55e] text-black font-semibold min-w-[140px]"
+                    className="bg-[#E8705A] hover:bg-[#D4604C] text-black font-semibold min-w-[140px]"
                   >
                     <Save className="w-4 h-4 mr-2" />
                     Update Profile

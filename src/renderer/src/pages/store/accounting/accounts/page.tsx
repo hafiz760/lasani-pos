@@ -3,14 +3,9 @@
 import { useState, useEffect } from 'react'
 import { DataPage } from '@renderer/components/shared/data-page'
 import { Badge } from '@renderer/components/ui/badge'
-import { TrendingUp, TrendingDown, Landmark, MoreVertical, Edit, Trash2 } from 'lucide-react'
+import { TrendingUp, TrendingDown, Landmark, Edit, Trash2 } from 'lucide-react'
 import { Card, CardContent } from '@renderer/components/ui/card'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger
-} from '@renderer/components/ui/dropdown-menu'
+
 import {
   Dialog,
   DialogContent,
@@ -264,7 +259,7 @@ export default function AccountsPage() {
       render: (item: any) => {
         const isNegative = item.currentBalance < 0
         return (
-          <span className={`font-bold ${isNegative ? 'text-red-400' : 'text-[#4ade80]'}`}>
+          <span className={`font-bold ${isNegative ? 'text-red-400' : 'text-[#E8705A]'}`}>
             Rs. {Math.abs(item.currentBalance).toLocaleString()}
             {isNegative && ' (CR)'}
           </span>
@@ -276,7 +271,7 @@ export default function AccountsPage() {
       accessor: 'isActive',
       render: (item: any) => (
         <div className="flex items-center gap-1.5">
-          <div className={`w-2 h-2 rounded-full ${item.isActive ? 'bg-[#4ade80]' : 'bg-muted'}`} />
+          <div className={`w-2 h-2 rounded-full ${item.isActive ? 'bg-[#E8705A]' : 'bg-muted'}`} />
           <span className="text-xs text-muted-foreground">
             {item.isActive ? 'Active' : 'Inactive'}
           </span>
@@ -287,32 +282,24 @@ export default function AccountsPage() {
       header: 'Actions',
       accessor: '_id',
       render: (item: any) => (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="hover:bg-accent h-8 w-8 text-foreground">
-              <MoreVertical className="w-4 h-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent
-            className="bg-popover border-border text-popover-foreground"
-            align="end"
+        <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 hover:bg-accent hover:text-[#E8705A]"
+            onClick={() => openEdit(item)}
           >
-            <DropdownMenuItem
-              onClick={() => openEdit(item)}
-              className="focus:bg-[#4ade80] focus:text-black cursor-pointer"
-            >
-              <Edit className="w-4 h-4 mr-2" />
-              Edit
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => setDeleteId(item._id)}
-              className="focus:bg-red-500 focus:text-white cursor-pointer text-red-400"
-            >
-              <Trash2 className="w-4 h-4 mr-2" />
-              Delete Account
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+            <Edit className="w-4 h-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 hover:bg-red-500/10 hover:text-red-500"
+            onClick={() => setDeleteId(item._id)}
+          >
+            <Trash2 className="w-4 h-4" />
+          </Button>
+        </div>
       )
     }
   ]
@@ -344,7 +331,7 @@ export default function AccountsPage() {
         </Card>
         <Card className="bg-card border-border">
           <CardContent className="p-6 flex items-center gap-4">
-            <div className="p-3 bg-[#4ade80]/10 rounded-lg text-[#4ade80]">
+            <div className="p-3 bg-[#E8705A]/10 rounded-lg text-[#E8705A]">
               <TrendingUp className="w-6 h-6" />
             </div>
             <div>
@@ -380,7 +367,7 @@ export default function AccountsPage() {
               </p>
             </div>
             <Button
-              className="bg-[#4ade80] text-black hover:bg-[#22c55e] font-semibold"
+              className="bg-[#E8705A] text-white hover:bg-[#D4604C] font-semibold"
               onClick={() => setIsSetupOpen(true)}
             >
               Setup Accounts
@@ -559,7 +546,7 @@ export default function AccountsPage() {
                   type="submit"
                   isLoading={isSaving}
                   loadingText="Updating..."
-                  className="bg-[#4ade80] hover:bg-[#22c55e] text-black font-semibold"
+                  className="bg-[#E8705A] hover:bg-[#D4604C] text-black font-semibold"
                 >
                   Update Account
                 </LoadingButton>
@@ -627,7 +614,7 @@ export default function AccountsPage() {
                   type="submit"
                   isLoading={isSaving}
                   loadingText="Setting up..."
-                  className="bg-[#4ade80] hover:bg-[#22c55e] text-black font-semibold"
+                  className="bg-[#E8705A] hover:bg-[#D4604C] text-black font-semibold"
                 >
                   Create Accounts
                 </LoadingButton>

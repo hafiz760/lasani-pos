@@ -3,40 +3,11 @@ import { useNavigate } from 'react-router-dom'
 import { DataPage } from '@renderer/components/shared/data-page'
 import { Badge } from '@renderer/components/ui/badge'
 import { Button } from '@renderer/components/ui/button'
-import { MoreVertical, Edit, Eye, Package as PackageIcon, PackagePlus, Trash2 } from 'lucide-react'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger
-} from '@renderer/components/ui/dropdown-menu'
+import { Edit, Package as PackageIcon, PackagePlus, Trash2 } from 'lucide-react'
+
 import { toast } from 'sonner'
 import { DeleteConfirm } from '@renderer/components/shared/delete-confirm'
 import { RestockModal } from '@renderer/components/inventory/restock-modal'
-
-// Color mapping (named colors to hex values)
-const COLOR_MAP: { [key: string]: string } = {
-  Green: '#4ade80',
-  Blue: '#60a5fa',
-  Red: '#f87171',
-  Amber: '#fbbf24',
-  Violet: '#a78bfa',
-  Pink: '#f472b6',
-  Orange: '#fb923c',
-  Teal: '#2dd4bf',
-  Indigo: '#818cf8',
-  Emerald: '#34d399',
-  Yellow: '#fde047',
-  Fuchsia: '#e879f9',
-  Purple: '#c084fc',
-  Slate: '#94a3b8',
-  Stone: '#a8a29e',
-  Black: '#000000',
-  White: '#ffffff',
-  Gray: '#475569',
-  Crimson: '#ef4444',
-  Sky: '#3b82f6'
-}
 
 export default function ProductsPage() {
   const [page, setPage] = useState(1)
@@ -221,7 +192,7 @@ export default function ProductsPage() {
       accessor: 'sellingPrice',
       render: (item: any) => (
         <div className="flex flex-col">
-          <span className="text-[#4ade80] font-bold">
+          <span className="text-[#E8705A] font-bold">
             Rs. {(item.sellingPrice || 0).toLocaleString()}
           </span>
           {/* ✅ Show price unit */}
@@ -253,46 +224,32 @@ export default function ProductsPage() {
       header: 'Actions',
       accessor: '_id',
       render: (item: any) => (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="hover:bg-accent">
-              <MoreVertical className="w-4 h-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent
-            className="bg-popover border-border text-popover-foreground"
-            align="end"
+        <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 hover:bg-accent hover:text-[#E8705A]"
+            onClick={() => openEdit(item)}
           >
-            <DropdownMenuItem
-              onClick={() => openDetail(item)}
-              className="focus:bg-[#4ade80] focus:text-black cursor-pointer"
-            >
-              <Eye className="w-4 h-4 mr-2" />
-              View Details
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => openEdit(item)}
-              className="focus:bg-[#4ade80] focus:text-black cursor-pointer"
-            >
-              <Edit className="w-4 h-4 mr-2" />
-              Edit
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => setRestockProduct(item)}
-              className="focus:bg-[#4ade80] focus:text-black cursor-pointer"
-            >
-              <PackagePlus className="w-4 h-4 mr-2" />
-              Quick Restock
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => setDeleteId(item._id)}
-              className="focus:bg-red-500 focus:text-white cursor-pointer text-red-500"
-            >
-              <Trash2 className="w-4 h-4 mr-2" />
-              Delete / Archive
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+            <Edit className="w-4 h-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 hover:bg-accent hover:text-[#E8705A]"
+            onClick={() => setRestockProduct(item)}
+          >
+            <PackagePlus className="w-4 h-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 hover:bg-red-500/10 hover:text-red-500"
+            onClick={() => setDeleteId(item._id)}
+          >
+            <Trash2 className="w-4 h-4" />
+          </Button>
+        </div>
       )
     }
   ]
@@ -332,6 +289,7 @@ export default function ProductsPage() {
           setSearchTerm(term)
           setPage(1)
         }}
+        onRowClick={(item) => openDetail(item)}
         extraActions={
           <Button
             variant="outline"

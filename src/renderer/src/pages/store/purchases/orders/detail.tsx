@@ -108,7 +108,7 @@ export default function PurchaseOrderDetails() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#4ade80]"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#E8705A]"></div>
       </div>
     )
   }
@@ -181,7 +181,7 @@ export default function PurchaseOrderDetails() {
             <Button
               onClick={handleReceive}
               disabled={isReceiving}
-              className="bg-[#4ade80] hover:bg-[#22c55e] text-black font-semibold"
+              className="bg-[#E8705A] hover:bg-[#D4604C] text-black font-semibold"
             >
               <CheckCircle2 className="w-4 h-4 mr-2" />
               {isReceiving ? 'Marking...' : 'Mark as Received'}
@@ -204,7 +204,7 @@ export default function PurchaseOrderDetails() {
         <Card className="md:col-span-2 bg-card border-border text-foreground">
           <CardHeader className="border-b border-border py-4">
             <CardTitle className="text-lg flex items-center gap-2">
-              <FileText className="w-5 h-5 text-[#4ade80]" />
+              <FileText className="w-5 h-5 text-[#E8705A]" />
               Order Items
             </CardTitle>
           </CardHeader>
@@ -240,7 +240,7 @@ export default function PurchaseOrderDetails() {
                       <td className="px-4 py-4 text-right">
                         Rs. {(item.sellingPrice || 0).toLocaleString()}
                       </td>
-                      <td className="px-4 py-4 text-right font-bold text-[#4ade80]">
+                      <td className="px-4 py-4 text-right font-bold text-[#E8705A]">
                         Rs. {(item.totalCost || 0).toLocaleString()}
                       </td>
                     </tr>
@@ -285,7 +285,7 @@ export default function PurchaseOrderDetails() {
           <Card className="bg-card border-border text-foreground overflow-hidden">
             <CardHeader className="bg-muted/50 border-b border-border py-4">
               <CardTitle className="text-lg flex items-center gap-2">
-                <CreditCard className="w-5 h-5 text-[#4ade80]" />
+                <CreditCard className="w-5 h-5 text-[#E8705A]" />
                 Summary
               </CardTitle>
             </CardHeader>
@@ -307,7 +307,7 @@ export default function PurchaseOrderDetails() {
               <Separator className="bg-border" />
               <div className="flex justify-between items-center py-2">
                 <span className="font-bold">Total Amount</span>
-                <span className="text-2xl font-black text-[#4ade80]">
+                <span className="text-2xl font-black text-[#E8705A]">
                   Rs. {(order.totalAmount || 0).toLocaleString()}
                 </span>
               </div>

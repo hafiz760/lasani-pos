@@ -37,7 +37,7 @@ export default function AdminDashboard() {
             title: "Active Stores",
             value: stores.filter(s => s.isActive).length,
             icon: TrendingUp,
-            color: "text-[#4ade80]",
+            color: "text-[#E8705A]",
             href: "/admin/stores"
         },
         {
@@ -59,7 +59,7 @@ export default function AdminDashboard() {
     if (isLoading) {
         return (
             <div className="flex items-center justify-center h-[60vh]">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#4ade80]"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#E8705A]"></div>
             </div>
         );
     }
@@ -97,15 +97,15 @@ export default function AdminDashboard() {
                             {stores.slice(0, 5).map((store) => (
                                 <div key={store._id} className="flex items-center justify-between">
                                     <div className="flex items-center gap-3">
-                                        <div className="h-10 w-10 rounded-lg bg-[#4ade80]/10 flex items-center justify-center">
-                                            <Building2 className="h-5 w-5 text-[#4ade80]" />
+                                        <div className="h-10 w-10 rounded-lg bg-[#E8705A]/10 flex items-center justify-center">
+                                            <Building2 className="h-5 w-5 text-[#E8705A]" />
                                         </div>
                                         <div>
                                             <p className="font-medium">{store.name}</p>
                                             <p className="text-xs text-muted-foreground">{store.code}</p>
                                         </div>
                                     </div>
-                                    <div className={`h-2 w-2 rounded-full ${store.isActive ? 'bg-[#4ade80]' : 'bg-gray-500'}`} />
+                                    <div className={`h-2 w-2 rounded-full ${store.isActive ? 'bg-[#E8705A]' : 'bg-gray-500'}`} />
                                 </div>
                             ))}
                             {stores.length === 0 && (

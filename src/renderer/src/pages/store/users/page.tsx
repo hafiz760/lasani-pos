@@ -127,7 +127,7 @@
 //             header: "Status",
 //             accessor: "isActive",
 //             render: (item: any) => (
-//                 <Badge className={item.isActive ? "bg-[#4ade80]/10 text-[#4ade80] border-[#4ade80]/20" : "bg-red-500/10 text-red-500 border-red-500/20"}>
+//                 <Badge className={item.isActive ? "bg-[#E8705A]/10 text-[#E8705A] border-[#E8705A]/20" : "bg-red-500/10 text-red-500 border-red-500/20"}>
 //                     {item.isActive ? "Active" : "Inactive"}
 //                 </Badge>
 //             )
@@ -260,7 +260,7 @@
 //                                     type="submit"
 //                                     isLoading={isSaving}
 //                                     loadingText="Creating..."
-//                                     className="bg-[#4ade80] hover:bg-[#22c55e] text-black font-semibold"
+//                                     className="bg-[#E8705A] hover:bg-[#D4604C] text-black font-semibold"
 //                                 >
 //                                     Create User
 //                                 </LoadingButton>

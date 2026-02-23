@@ -130,7 +130,7 @@ const api = {
     printReceipt: (html: string) => ipcRenderer.invoke('printer:printReceipt', html)
   },
   dashboard: {
-    getStats: (storeId) => ipcRenderer.invoke('dashboard:getStats', storeId)
+    getStats: (storeId, period?: string) => ipcRenderer.invoke('dashboard:getStats', storeId, period)
   },
   config: {
     get: () => ipcRenderer.invoke('config:get'),

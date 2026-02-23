@@ -165,7 +165,7 @@ export default function StoresPage() {
       accessor: "name",
       render: (item: any) => (
         <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-lg bg-[#4ade80]/10 flex items-center justify-center overflow-hidden">
+          <div className="h-10 w-10 rounded-lg bg-[#E8705A]/10 flex items-center justify-center overflow-hidden">
             {item.settings?.logo ? (
               <img
                 src={item.settings.logo}
@@ -176,7 +176,7 @@ export default function StoresPage() {
                 }}
               />
             ) : (
-              <Building2 className="w-5 h-5 text-[#4ade80]" />
+              <Building2 className="w-5 h-5 text-[#E8705A]" />
             )}
           </div>
           <div>
@@ -213,7 +213,7 @@ export default function StoresPage() {
         <Badge
           className={
             item.isActive
-              ? "bg-[#4ade80]/10 text-[#4ade80] border-[#4ade80]/20"
+              ? "bg-[#E8705A]/10 text-[#E8705A] border-[#E8705A]/20"
               : "bg-gray-500/10 text-gray-400 border-gray-500/20"
           }
         >
@@ -250,7 +250,7 @@ export default function StoresPage() {
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => handleEdit(item)}
-              className="focus:bg-[#4ade80] focus:text-black cursor-pointer"
+              className="focus:bg-[#E8705A] focus:text-white cursor-pointer"
             >
               <Edit className="w-4 h-4 mr-2" />
               Edit
@@ -260,7 +260,7 @@ export default function StoresPage() {
               className={
                 item.isActive
                   ? "focus:bg-amber-500 focus:text-white cursor-pointer text-amber-500"
-                  : "focus:bg-[#4ade80] focus:text-black cursor-pointer text-[#4ade80]"
+                  : "focus:bg-[#E8705A] focus:text-white cursor-pointer text-[#E8705A]"
               }
             >
               {item.isActive ? (
@@ -460,7 +460,7 @@ export default function StoresPage() {
                   type="submit"
                   isLoading={isSubmitting}
                   loadingText={isEditOpen ? "Updating..." : "Creating..."}
-                  className="bg-[#4ade80] hover:bg-[#22c55e] text-black font-semibold"
+                  className="bg-[#E8705A] hover:bg-[#D4604C] text-black font-semibold"
                 >
                   {isEditOpen ? "Update Store" : "Create Store"}
                 </LoadingButton>

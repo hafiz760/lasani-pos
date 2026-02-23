@@ -16,18 +16,18 @@ export function ProductTypeSelector({ value, onChange }: ProductTypeSelectorProp
           onClick={() => onChange('SIMPLE')}
           className={`group flex flex-col items-center gap-4 p-6 border-2 rounded-xl transition-all ${
             value === 'SIMPLE'
-              ? 'border-[#4ade80] bg-[#4ade80]/10'
-              : 'border-border hover:border-[#4ade80]/50 hover:bg-[#4ade80]/5'
+              ? 'border-[#E8705A] bg-[#E8705A]/10'
+              : 'border-border hover:border-[#E8705A]/50 hover:bg-[#E8705A]/5'
           }`}
         >
           <div
             className={`w-14 h-14 rounded-full flex items-center justify-center transition-colors ${
-              value === 'SIMPLE' ? 'bg-[#4ade80]/20' : 'bg-blue-500/10 group-hover:bg-[#4ade80]/20'
+              value === 'SIMPLE' ? 'bg-[#E8705A]/20' : 'bg-blue-500/10 group-hover:bg-[#E8705A]/20'
             }`}
           >
             <Package
               className={`w-7 h-7 transition-colors ${
-                value === 'SIMPLE' ? 'text-[#4ade80]' : 'text-blue-500 group-hover:text-[#4ade80]'
+                value === 'SIMPLE' ? 'text-[#E8705A]' : 'text-blue-500 group-hover:text-[#E8705A]'
               }`}
             />
           </div>

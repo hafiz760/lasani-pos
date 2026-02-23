@@ -153,7 +153,7 @@ declare global {
         ) => Promise<any>
       }
       dashboard: {
-        getStats: (storeId: string) => Promise<any>
+        getStats: (storeId: string, period?: string) => Promise<any>
       }
       config: {
         get: () => Promise<{ success: boolean; data?: any; error?: string }>

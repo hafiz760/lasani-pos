@@ -95,9 +95,9 @@ export function RawMaterialConfig({ form }: RawMaterialConfigProps) {
 
         <div className="grid grid-cols-1 gap-4">
           {/* Stock Display */}
-          <div className="text-center p-4 bg-[#4ade80]/10 rounded-lg border-2 border-[#4ade80]/30">
+          <div className="text-center p-4 bg-[#E8705A]/10 rounded-lg border-2 border-[#E8705A]/30">
             <p className="text-xs text-muted-foreground mb-1">Available Stock</p>
-            <p className="text-3xl font-bold text-[#4ade80]">{totalMeters.toFixed(1)} meters</p>
+            <p className="text-3xl font-bold text-[#E8705A]">{totalMeters.toFixed(1)} meters</p>
           </div>
 
           {/* Reference Info */}
@@ -106,7 +106,7 @@ export function RawMaterialConfig({ form }: RawMaterialConfigProps) {
               <p className="text-xs text-blue-600">
                 💡 <strong>Reference:</strong> With {totalMeters.toFixed(1)} meters at{' '}
                 {metersPerUnit} meters/suit, you can make approximately{' '}
-                <strong className="text-[#4ade80]">{calculatedSuits} suits</strong>
+                <strong className="text-[#E8705A]">{calculatedSuits} suits</strong>
                 {totalMeters % metersPerUnit > 0 && (
                   <>
                     {' '}

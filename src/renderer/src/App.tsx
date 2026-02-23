@@ -42,7 +42,11 @@ import TransactionsPrintPreviewPage from './pages/store/accounting/transactions/
 import EditSimpleProduct from '@renderer/pages/store/inventory/products/EditSimpleProduct'
 import EditRawMaterialProduct from '@renderer/pages/store/inventory/products/EditRawMaterialProduct'
 import CustomersPage from '@renderer/pages/store/customers/page'
+import CustomerReportPage from './pages/store/reports/customers/page'
+import ExpenseReportPage from './pages/store/reports/expenses/page'
+import TransactionsReportPage from './pages/store/reports/transactions/page'
 import AdminSettingsPage from '@renderer/pages/admin/settings/page'
+import RefundPage from './pages/store/reports/sales/refund'
 
 interface User {
   id: string
@@ -192,6 +196,10 @@ function App(): React.JSX.Element {
             <Route path="reports" element={<ReportsPage />} />
             <Route path="reports/sales" element={<SalesReportsPage />} />
             <Route path="reports/sales/:id" element={<SalesDetailPage />} />
+            <Route path="reports/sales/:id/refund" element={<RefundPage />} />
+            <Route path="reports/customers" element={<CustomerReportPage />} />
+            <Route path="reports/expenses" element={<ExpenseReportPage />} />
+            <Route path="reports/transactions" element={<TransactionsReportPage />} />
             <Route path="reports/sales-report" element={<SalesReportPage />} />
             <Route path="reports/sales-report/preview" element={<SalesReportPrintPreviewPage />} />
             <Route path="accounting" element={<AccountingPage />} />

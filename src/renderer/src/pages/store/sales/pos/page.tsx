@@ -162,6 +162,9 @@ export default function POSPage() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [selectedIndex, setSelectedIndex] = useState(0)
 
+  // Cooldown ref to prevent Escape from navigating right after closing an overlay
+  const overlayClosedRef = useRef(false)
+
   // Low Stock Alert State
   const [stockAlert, setStockAlert] = useState<{
     open: boolean
@@ -185,8 +188,13 @@ export default function POSPage() {
         searchInputRef.current?.focus()
       }
       if (e.key === 'Escape') {
-        setIsDropdownOpen(false)
-        setSelectedIndex(0)
+        if (isDropdownOpen) {
+          setIsDropdownOpen(false)
+          setSelectedIndex(0)
+        } else if (!meterSheetOpen && !creditDialogOpen && !showReceipt && !stockAlert.open && !overlayClosedRef.current) {
+          e.preventDefault()
+          navigate(-1)
+        }
       }
       // F5 to complete sale (when cart has items)
       if (e.key === 'F5' && cart.length > 0 && !isSubmitting && !showReceipt) {
@@ -203,7 +211,7 @@ export default function POSPage() {
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [cart, isSubmitting, showReceipt])
+  }, [cart, isSubmitting, showReceipt, isDropdownOpen, meterSheetOpen, creditDialogOpen, stockAlert.open])
 
   // Click outside to close dropdown
   useEffect(() => {
@@ -520,6 +528,9 @@ export default function POSPage() {
       setMeterProduct(null)
       setMeterInput('')
       setIsEditingMeters(false)
+      // Block Escape-navigation briefly so closing the sheet doesn't also exit POS
+      overlayClosedRef.current = true
+      setTimeout(() => { overlayClosedRef.current = false }, 200)
     }
   }
 
@@ -834,7 +845,7 @@ export default function POSPage() {
             <Input
               ref={searchInputRef}
               placeholder="Search item by name, SKU or barcode (F2)..."
-              className="bg-card text-foreground border-border pl-14 h-14 text-xl focus:border-[#4ade80] focus:ring-[#4ade80]/20 rounded-xl w-full"
+              className="bg-card text-foreground border-border pl-14 h-14 text-xl focus:border-[#E8705A] focus:ring-[#E8705A]/20 rounded-xl w-full"
               value={search}
               onChange={handleSearchChange}
               onKeyDown={handleSearchKeyDown}
@@ -858,11 +869,10 @@ export default function POSPage() {
                     <div
                       key={product._id}
                       data-product-item
-                      className={`flex items-center gap-4 p-3 rounded-lg cursor-pointer transition-all border-b border-border/30 last:border-0 ${
-                        index === selectedIndex
-                          ? 'bg-[#4ade80]/20 ring-2 ring-[#4ade80]/50'
-                          : 'hover:bg-[#4ade80]/10'
-                      }`}
+                      className={`flex items-center gap-4 p-3 rounded-lg cursor-pointer transition-all border-b border-border/30 last:border-0 ${index === selectedIndex
+                        ? 'bg-[#E8705A]/20 ring-2 ring-[#E8705A]/50'
+                        : 'hover:bg-[#E8705A]/10'
+                        }`}
                       onClick={() => {
                         addToCart(product)
                         setSearch('')
@@ -887,7 +897,7 @@ export default function POSPage() {
                           <h4 className="font-bold text-sm text-foreground truncate">
                             {product.name}
                           </h4>
-                          <span className="font-black text-sm text-[#4ade80] shrink-0 ml-2">
+                          <span className="font-black text-sm text-[#E8705A] shrink-0 ml-2">
                             Rs. {product.sellingPrice?.toLocaleString()}
                           </span>
                         </div>
@@ -900,17 +910,16 @@ export default function POSPage() {
                           </span>
                           <Badge
                             variant="outline"
-                            className={`text-[9px] font-black h-4 px-1 ${
-                              product.stockLevel < 5
-                                ? 'text-red-500 border-red-500/20'
-                                : 'text-green-500 border-green-500/20'
-                            }`}
+                            className={`text-[9px] font-black h-4 px-1 ${product.stockLevel < 5
+                              ? 'text-red-500 border-red-500/20'
+                              : 'text-green-500 border-green-500/20'
+                              }`}
                           >
                             {product.stockLevel} IN STOCK
                           </Badge>
                         </div>
                       </div>
-                      <Plus className="w-4 h-4 text-[#4ade80]" />
+                      <Plus className="w-4 h-4 text-[#E8705A]" />
                     </div>
                   ))}
                 </div>
@@ -958,10 +967,10 @@ export default function POSPage() {
         <div className="flex-1 flex flex-col overflow-hidden bg-card/30 rounded-2xl border border-border">
           <div className="p-4 border-b border-border bg-muted/20 flex items-center justify-between">
             <h2 className="text-xl font-black uppercase tracking-tight flex items-center gap-2">
-              <ShoppingCart className="w-6 h-6 text-[#4ade80]" />
+              <ShoppingCart className="w-6 h-6 text-[#E8705A]" />
               Current Order
             </h2>
-            <Badge className="bg-[#4ade80] text-black hover:bg-[#4ade80] font-black h-8 px-4 text-sm">
+            <Badge className="bg-[#E8705A] text-white hover:bg-[#E8705A] font-black h-8 px-4 text-sm">
               {cart.length} {cart.length === 1 ? 'ITEM' : 'ITEMS'}
             </Badge>
           </div>
@@ -979,7 +988,7 @@ export default function POSPage() {
                   <p className="text-2xl font-black uppercase tracking-widest opacity-20">
                     Your cart is empty
                   </p>
-                  <p className="text-sm not-italic font-bold text-[#4ade80] animate-pulse">
+                  <p className="text-sm not-italic font-bold text-[#E8705A] animate-pulse">
                     Press F2 to search and add products
                   </p>
                 </div>
@@ -994,7 +1003,7 @@ export default function POSPage() {
                   {cart.map((item) => (
                     <div
                       key={item._id}
-                      className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center bg-card p-4 rounded-xl border border-border hover:border-[#4ade80]/50 transition-all group relative"
+                      className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center bg-card p-4 rounded-xl border border-border hover:border-[#E8705A]/50 transition-all group relative"
                     >
                       <div className="col-span-6 flex items-center gap-4">
                         <div className="w-12 h-12 rounded-lg bg-muted/50 flex items-center justify-center shrink-0 border border-border">
@@ -1028,7 +1037,7 @@ export default function POSPage() {
 
                       <div className="col-span-2">
                         <div className="flex items-center gap-1 bg-muted/50 rounded-lg p-2 border border-border">
-                          <span className="text-xs font-black text-[#4ade80]">Rs.</span>
+                          <span className="text-xs font-black text-[#E8705A]">Rs.</span>
                           <input
                             type="number"
                             className="w-full bg-transparent text-sm font-black text-foreground focus:outline-none"
@@ -1056,7 +1065,7 @@ export default function POSPage() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-7 w-7 text-[#4ade80] hover:bg-background"
+                              className="h-7 w-7 text-[#E8705A] hover:bg-background"
                               onClick={() => openMetersSheet(item, true)}
                             >
                               <Edit3 className="w-3.5 h-3.5" />
@@ -1066,7 +1075,7 @@ export default function POSPage() {
                           <div className="flex items-center bg-muted rounded-lg border border-border p-1">
                             <button
                               onClick={() => updateQuantity(item._id, -1)}
-                              className="h-8 w-8 rounded-md hover:bg-background flex items-center justify-center transition-colors text-[#4ade80]"
+                              className="h-8 w-8 rounded-md hover:bg-background flex items-center justify-center transition-colors text-[#E8705A]"
                             >
                               <Minus className="w-4 h-4" />
                             </button>
@@ -1075,7 +1084,7 @@ export default function POSPage() {
                             </span>
                             <button
                               onClick={() => updateQuantity(item._id, 1)}
-                              className="h-8 w-8 rounded-md hover:bg-background flex items-center justify-center transition-colors text-[#4ade80]"
+                              className="h-8 w-8 rounded-md hover:bg-background flex items-center justify-center transition-colors text-[#E8705A]"
                             >
                               <Plus className="w-4 h-4" />
                             </button>
@@ -1179,10 +1188,10 @@ export default function POSPage() {
                   </div>
 
                   <div className="pt-4 border-t border-border flex justify-between items-center">
-                    <span className="text-sm font-black uppercase tracking-widest text-[#4ade80]">
+                    <span className="text-sm font-black uppercase tracking-widest text-[#E8705A]">
                       Grand Total
                     </span>
-                    <span className="text-3xl font-black text-[#4ade80]">
+                    <span className="text-3xl font-black text-[#E8705A]">
                       Rs. {(total || 0).toLocaleString()}
                     </span>
                   </div>
@@ -1190,7 +1199,7 @@ export default function POSPage() {
 
                 {/* Payment Method */}
                 <div className="space-y-4">
-                  <h4 className="text-xs font-black text-muted-foreground uppercase tracking-widest border-l-4 border-[#4ade80] pl-3">
+                  <h4 className="text-xs font-black text-muted-foreground uppercase tracking-widest border-l-4 border-[#E8705A] pl-3">
                     Payment Method
                   </h4>
                   <FormField
@@ -1203,11 +1212,10 @@ export default function POSPage() {
                             key={method}
                             type="button"
                             variant="outline"
-                            className={`h-12 px-3 text-xs sm:text-[11px] font-black leading-snug whitespace-normal border-2 transition-all duration-200 ${
-                              field.value === method
-                                ? 'text-[#4ade80] border-[#4ade80] hover:bg-[#4ade80] hover:text-[#4ade80] hover:border-[#4ade80]'
-                                : 'text-foreground border-border hover:bg-muted'
-                            }`}
+                            className={`h-12 px-3 text-xs sm:text-[11px] font-black leading-snug whitespace-normal border-2 transition-all duration-200 ${field.value === method
+                              ? 'text-[#E8705A] border-[#E8705A] hover:bg-[#E8705A] hover:text-[#E8705A] hover:border-[#E8705A]'
+                              : 'text-foreground border-border hover:bg-muted'
+                              }`}
                             onClick={() => {
                               field.onChange(method)
                               if (method !== 'Bank Transfer') {
@@ -1228,7 +1236,7 @@ export default function POSPage() {
 
                 {paymentMethod === 'Bank Transfer' && (
                   <div className="space-y-4">
-                    <h4 className="text-xs font-black text-muted-foreground uppercase tracking-widest border-l-4 border-[#4ade80] pl-3">
+                    <h4 className="text-xs font-black text-muted-foreground uppercase tracking-widest border-l-4 border-[#E8705A] pl-3">
                       Bank Transfer Method
                     </h4>
                     <FormField
@@ -1241,11 +1249,10 @@ export default function POSPage() {
                               key={channel}
                               type="button"
                               variant="outline"
-                              className={`h-11 text-xs font-black uppercase border-2 transition-all ${
-                                field.value === channel
-                                  ? 'bg-[#4ade80] text-[#4ade80] border-[#4ade80] hover:bg-[#4ade80] hover:text-[#4ade80]'
-                                  : 'bg-transparent text-foreground border-border hover:bg-muted'
-                              }`}
+                              className={`h-11 text-xs font-black uppercase border-2 transition-all ${field.value === channel
+                                ? 'bg-[#E8705A] text-white border-[#E8705A] hover:bg-[#E8705A] hover:text-white'
+                                : 'bg-transparent text-foreground border-border hover:bg-muted'
+                                }`}
                               onClick={() => field.onChange(channel)}
                             >
                               {channel}
@@ -1273,7 +1280,7 @@ export default function POSPage() {
 
                 <LoadingButton
                   type="submit"
-                  className="w-full bg-[#4ade80] hover:bg-[#22c55e] text-black font-black uppercase text-lg tracking-widest h-16 shadow-2xl shadow-[#4ade80]/30 rounded-xl"
+                  className="w-full bg-[#E8705A] hover:bg-[#D4604C] text-black font-black uppercase text-lg tracking-widest h-16 shadow-2xl shadow-[#E8705A]/30 rounded-xl"
                   isLoading={isSubmitting}
                   loadingText="PROCESSING..."
                   disabled={cart.length === 0}
@@ -1304,7 +1311,7 @@ export default function POSPage() {
       <Dialog open={showReceipt} onOpenChange={setShowReceipt}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-2xl font-black text-center text-[#4ade80]">
+            <DialogTitle className="text-2xl font-black text-center text-[#E8705A]">
               Sale Completed Successfully!
             </DialogTitle>
             <DialogDescription className="text-center">
@@ -1402,7 +1409,7 @@ export default function POSPage() {
                   </span>
                 </div>
               )}
-              <div className="flex justify-between items-center text-xl font-black text-[#4ade80] border-t-2 border-dashed pt-2">
+              <div className="flex justify-between items-center text-xl font-black text-[#E8705A] border-t-2 border-dashed pt-2">
                 <span>Total:</span>
                 <span>Rs. {lastSale?.totalAmount?.toLocaleString() || '0'}</span>
               </div>
@@ -1443,7 +1450,7 @@ export default function POSPage() {
             </Button>
             <Button
               onClick={handlePrint}
-              className="flex-1 bg-[#4ade80] hover:bg-[#22c55e] text-black font-black"
+              className="flex-1 bg-[#E8705A] hover:bg-[#D4604C] text-black font-black"
             >
               <Printer className="w-4 h-4 mr-2" />
               Print Receipt
@@ -1464,11 +1471,10 @@ export default function POSPage() {
                 <Button
                   type="button"
                   variant="outline"
-                  className={`h-10 text-xs font-black uppercase border-2 transition-all ${
-                    customerMode === 'existing'
-                      ? 'bg-[#4ade80] text-black border-[#4ade80]'
-                      : 'bg-transparent text-foreground border-border'
-                  }`}
+                  className={`h-10 text-xs font-black uppercase border-2 transition-all ${customerMode === 'existing'
+                    ? 'bg-[#E8705A] text-white border-[#E8705A]'
+                    : 'bg-transparent text-foreground border-border'
+                    }`}
                   onClick={() => setCustomerMode('existing')}
                 >
                   Existing Customer
@@ -1476,11 +1482,10 @@ export default function POSPage() {
                 <Button
                   type="button"
                   variant="outline"
-                  className={`h-10 text-xs font-black uppercase border-2 transition-all ${
-                    customerMode === 'new'
-                      ? 'bg-[#4ade80] text-black border-[#4ade80]'
-                      : 'bg-transparent text-foreground border-border'
-                  }`}
+                  className={`h-10 text-xs font-black uppercase border-2 transition-all ${customerMode === 'new'
+                    ? 'bg-[#E8705A] text-white border-[#E8705A]'
+                    : 'bg-transparent text-foreground border-border'
+                    }`}
                   onClick={() => setCustomerMode('new')}
                 >
                   Add New
@@ -1573,7 +1578,7 @@ export default function POSPage() {
                 Close
               </Button>
               <Button
-                className="bg-[#4ade80] text-black hover:bg-[#22c55e]"
+                className="bg-[#E8705A] text-white hover:bg-[#D4604C]"
                 onClick={handleCreditSave}
                 type="button"
               >
@@ -1639,7 +1644,7 @@ export default function POSPage() {
             <Button variant="outline" onClick={() => setMeterSheetOpen(false)}>
               Cancel
             </Button>
-            <Button className="bg-[#4ade80] text-black hover:bg-[#22c55e]" onClick={confirmMeters}>
+            <Button className="bg-[#E8705A] text-white hover:bg-[#D4604C]" onClick={confirmMeters}>
               {isEditingMeters ? 'Update Meters' : 'Add to Cart'}
             </Button>
           </SheetFooter>

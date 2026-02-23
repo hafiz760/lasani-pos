@@ -2640,10 +2640,29 @@ export function registerIpcHandlers() {
   })
 
   // Dashboard Handlers
-  ipcMain.handle('dashboard:getStats', async (_event, storeId) => {
+  ipcMain.handle('dashboard:getStats', async (_event, storeId, period = 'all') => {
     try {
-      const sales = await models.Sale.find({ store: storeId })
-      const products = await models.Product.find({ store: storeId })
+      // Build date filter based on period
+      const now = new Date()
+      let dateFilter: any = {}
+
+      if (period === 'today') {
+        const startOfDay = new Date(now)
+        startOfDay.setHours(0, 0, 0, 0)
+        dateFilter = { createdAt: { $gte: startOfDay } }
+      } else if (period === 'week') {
+        const startOfWeek = new Date(now)
+        startOfWeek.setDate(now.getDate() - now.getDay())
+        startOfWeek.setHours(0, 0, 0, 0)
+        dateFilter = { createdAt: { $gte: startOfWeek } }
+      } else if (period === 'month') {
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+        dateFilter = { createdAt: { $gte: startOfMonth } }
+      }
+
+      const salesQuery: any = { store: storeId, ...dateFilter }
+      const sales = await models.Sale.find(salesQuery).lean()
+      const products = await models.Product.find({ store: storeId }).lean()
 
       const revenue = sales.reduce((acc, sale) => acc + (sale.totalAmount || 0), 0)
       const profit = sales.reduce((acc, sale) => acc + (sale.profitAmount || 0), 0)
@@ -2651,46 +2670,87 @@ export function registerIpcHandlers() {
 
       const lowStockCount = products.filter((p) => p.stockLevel <= p.minStockLevel).length
 
-      // Calculate total pending from unpaid sales
+      // Calculate total pending from filtered sales
       const pendingSales = sales.filter((s) => s.paymentStatus !== 'PAID')
       const totalPending = pendingSales.reduce(
         (acc, sale) => acc + (sale.totalAmount - sale.paidAmount),
         0
       )
 
-      // Get last 7 days chart data
-      const sevenDaysAgo = new Date()
-      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6)
-      sevenDaysAgo.setHours(0, 0, 0, 0)
-
-      const recentSalesForChart = await models.Sale.find({
-        store: storeId,
-        createdAt: { $gte: sevenDaysAgo }
-      }).lean()
-
+      // Build chart data based on period
+      let chartData: any[] = []
       const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-      const chartDataMap = new Map()
 
-      // Initialize last 7 days
-      for (let i = 0; i < 7; i++) {
-        const date = new Date()
-        date.setDate(date.getDate() - i)
-        const dayName = days[date.getDay()]
-        chartDataMap.set(dayName, 0)
+      if (period === 'today') {
+        // Hourly chart for today
+        const hourMap = new Map<string, number>()
+        for (let h = 0; h < 24; h++) {
+          const label = h === 0 ? '12AM' : h < 12 ? `${h}AM` : h === 12 ? '12PM' : `${h - 12}PM`
+          hourMap.set(label, 0)
+        }
+        sales.forEach((sale) => {
+          const h = new Date(sale.createdAt).getHours()
+          const label = h === 0 ? '12AM' : h < 12 ? `${h}AM` : h === 12 ? '12PM' : `${h - 12}PM`
+          hourMap.set(label, (hourMap.get(label) || 0) + (sale.totalAmount || 0))
+        })
+        chartData = Array.from(hourMap.entries()).map(([name, sales]) => ({ name, sales }))
+      } else if (period === 'week') {
+        // Daily chart for this week
+        const dayMap = new Map<string, number>()
+        for (let i = 0; i < 7; i++) {
+          const d = new Date(now)
+          d.setDate(now.getDate() - now.getDay() + i)
+          dayMap.set(days[d.getDay()], 0)
+        }
+        sales.forEach((sale) => {
+          const dayName = days[new Date(sale.createdAt).getDay()]
+          if (dayMap.has(dayName)) {
+            dayMap.set(dayName, (dayMap.get(dayName) || 0) + (sale.totalAmount || 0))
+          }
+        })
+        chartData = Array.from(dayMap.entries()).map(([name, sales]) => ({ name, sales }))
+      } else if (period === 'month') {
+        // Weekly chart for this month
+        const weekMap = new Map<string, number>()
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+        const weeksInMonth = Math.ceil((now.getDate()) / 7)
+        for (let w = 1; w <= Math.max(weeksInMonth, 4); w++) {
+          weekMap.set(`Week ${w}`, 0)
+        }
+        sales.forEach((sale) => {
+          const saleDate = new Date(sale.createdAt)
+          const weekNum = Math.ceil(saleDate.getDate() / 7)
+          const key = `Week ${weekNum}`
+          if (weekMap.has(key)) {
+            weekMap.set(key, (weekMap.get(key) || 0) + (sale.totalAmount || 0))
+          }
+        })
+        chartData = Array.from(weekMap.entries()).map(([name, sales]) => ({ name, sales }))
+      } else {
+        // Last 7 days for "all"
+        const chartDataMap = new Map<string, number>()
+        for (let i = 6; i >= 0; i--) {
+          const date = new Date(now)
+          date.setDate(now.getDate() - i)
+          chartDataMap.set(days[date.getDay()], 0)
+        }
+        const sevenDaysAgo = new Date(now)
+        sevenDaysAgo.setDate(now.getDate() - 6)
+        sevenDaysAgo.setHours(0, 0, 0, 0)
+        const recentSalesForChart = await models.Sale.find({
+          store: storeId,
+          createdAt: { $gte: sevenDaysAgo }
+        }).lean()
+        recentSalesForChart.forEach((sale) => {
+          const dayName = days[new Date(sale.createdAt).getDay()]
+          if (chartDataMap.has(dayName)) {
+            chartDataMap.set(dayName, (chartDataMap.get(dayName) || 0) + (sale.totalAmount || 0))
+          }
+        })
+        chartData = Array.from(chartDataMap.entries()).map(([name, sales]) => ({ name, sales }))
       }
 
-      recentSalesForChart.forEach((sale) => {
-        const dayName = days[new Date(sale.createdAt).getDay()]
-        if (chartDataMap.has(dayName)) {
-          chartDataMap.set(dayName, chartDataMap.get(dayName) + (sale.totalAmount || 0))
-        }
-      })
-
-      const chartData = Array.from(chartDataMap.entries())
-        .map(([name, sales]) => ({ name, sales }))
-        .reverse()
-
-      const recentSales = await models.Sale.find({ store: storeId })
+      const recentSales = await models.Sale.find(salesQuery)
         .populate('customer', 'name')
         .sort({ createdAt: -1 })
         .limit(5)

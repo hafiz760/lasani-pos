@@ -15,7 +15,7 @@ interface ClothDetailsProps {
 }
 
 export function ClothDetails({ form, attributes, productKind }: ClothDetailsProps) {
-  const titleColor = productKind === 'RAW_MATERIAL' ? 'text-amber-600' : 'text-[#4ade80]'
+  const titleColor = productKind === 'RAW_MATERIAL' ? 'text-amber-600' : 'text-[#E8705A]'
 
   return (
     <div className="bg-card border border-border rounded-lg p-6">

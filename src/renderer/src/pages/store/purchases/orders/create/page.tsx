@@ -279,7 +279,7 @@ export default function CreatePurchaseOrderPage() {
                           variant="outline"
                           size="icon"
                           onClick={() => setIsAddSupplierOpen(true)}
-                          className="border-border hover:bg-[#4ade80]/10 hover:border-[#4ade80]"
+                          className="border-border hover:bg-[#E8705A]/10 hover:border-[#E8705A]"
                           title="Add New Supplier"
                         >
                           <UserPlus className="w-4 h-4" />
@@ -409,7 +409,7 @@ export default function CreatePurchaseOrderPage() {
                               key={product._id}
                               className={`p-2 cursor-pointer transition-colors border-b border-border last:border-0 ${
                                 index === selectedSuggestionIndex
-                                  ? 'bg-[#4ade80]/10 border-l-2 border-l-[#4ade80]'
+                                  ? 'bg-[#E8705A]/10 border-l-2 border-l-[#E8705A]'
                                   : 'hover:bg-muted'
                               }`}
                               onClick={() => {
@@ -526,7 +526,7 @@ export default function CreatePurchaseOrderPage() {
                               }}
                             />
                           </td>
-                          <td className="p-2 text-right text-xs font-bold text-[#4ade80]">
+                          <td className="p-2 text-right text-xs font-bold text-[#E8705A]">
                             {(
                               (watchedItems[index]?.quantity || 0) *
                               (watchedItems[index]?.unitCost || 0)
@@ -628,10 +628,10 @@ export default function CreatePurchaseOrderPage() {
                   </div>
                 </div>
                 <div className="flex flex-col gap-1 items-end justify-center">
-                  <span className="text-[10px] text-[#4ade80] uppercase font-bold">
+                  <span className="text-[10px] text-[#E8705A] uppercase font-bold">
                     Grand Total
                   </span>
-                  <span className="text-xl font-black text-[#4ade80]">
+                  <span className="text-xl font-black text-[#E8705A]">
                     Rs. {total.toLocaleString()}
                   </span>
                 </div>
@@ -650,7 +650,7 @@ export default function CreatePurchaseOrderPage() {
                   type="submit"
                   isLoading={isSubmitting}
                   loadingText="Creating PO..."
-                  className="bg-[#4ade80] hover:bg-[#22c55e] text-black font-black px-8"
+                  className="bg-[#E8705A] hover:bg-[#D4604C] text-black font-black px-8"
                 >
                   Create Purchase Order
                 </LoadingButton>
@@ -705,7 +705,7 @@ export default function CreatePurchaseOrderPage() {
                 </Button>
                 <Button
                   type="submit"
-                  className="bg-[#4ade80] hover:bg-[#22c55e] text-black font-semibold"
+                  className="bg-[#E8705A] hover:bg-[#D4604C] text-black font-semibold"
                 >
                   Create Supplier
                 </Button>

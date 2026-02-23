@@ -58,8 +58,8 @@ export default function DashboardPage() {
       }
 
       const store = JSON.parse(selectedStoreStr)
-      const result = await window.api.dashboard.getStats(store._id || store.id)
-
+      const result = await window.api.dashboard.getStats(store._id || store.id, 'today')
+      console.log(result, 'result')
       if (result.success) {
         setStats(result.data)
       } else {
@@ -76,7 +76,7 @@ export default function DashboardPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-[60vh]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#4ade80]"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#E8705A]"></div>
       </div>
     )
   }
@@ -98,7 +98,7 @@ function AdminDashboard({ stats, user }: { stats: any; user: any }) {
       change: 'Lifetime cumulative',
       icon: DollarSign,
       trend: 'up',
-      color: 'text-[#4ade80]'
+      color: 'text-[#E8705A]'
     },
     {
       title: 'Sales Count',
@@ -157,7 +157,7 @@ function AdminDashboard({ stats, user }: { stats: any; user: any }) {
           <Button variant="outline" className="border-border hover:bg-accent text-foreground">
             Download Report
           </Button>
-          <Button className="bg-[#4ade80] hover:bg-[#22c55e] text-black font-semibold">
+          <Button className="bg-[#E8705A] hover:bg-[#D4604C] text-white font-semibold">
             Generate Invoice
           </Button>
         </div>
@@ -176,7 +176,7 @@ function AdminDashboard({ stats, user }: { stats: any; user: any }) {
               <div className="text-2xl font-bold">{stat.value}</div>
               <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
                 {stat.trend === 'up' ? (
-                  <ArrowUpRight className="w-3 h-3 text-[#4ade80]" />
+                  <ArrowUpRight className="w-3 h-3 text-[#E8705A]" />
                 ) : (
                   <ArrowDownRight className="w-3 h-3 text-red-500" />
                 )}
@@ -201,8 +201,8 @@ function AdminDashboard({ stats, user }: { stats: any; user: any }) {
                 <AreaChart data={chartData}>
                   <defs>
                     <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#4ade80" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="#4ade80" stopOpacity={0} />
+                      <stop offset="5%" stopColor="#E8705A" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#E8705A" stopOpacity={0} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid
@@ -235,7 +235,7 @@ function AdminDashboard({ stats, user }: { stats: any; user: any }) {
                   <Area
                     type="monotone"
                     dataKey="sales"
-                    stroke="#4ade80"
+                    stroke="#E8705A"
                     strokeWidth={2}
                     fillOpacity={1}
                     fill="url(#colorSales)"
@@ -259,7 +259,7 @@ function AdminDashboard({ stats, user }: { stats: any; user: any }) {
                 stats.recentSales.map((sale: any, i: number) => (
                   <div key={i} className="flex items-center">
                     <Avatar className="h-9 w-9 border border-border">
-                      <AvatarFallback className="bg-[#4ade80]/10 text-sm text-[#4ade80] font-bold">
+                      <AvatarFallback className="bg-[#E8705A]/10 text-sm text-[#E8705A] font-bold">
                         {(sale.customer?.name || 'Walk-In')
                           .split(' ')
                           .map((n: any) => n[0])
@@ -277,7 +277,7 @@ function AdminDashboard({ stats, user }: { stats: any; user: any }) {
                     <div className="ml-auto text-right">
                       <p className="text-sm font-bold">Rs. {sale.totalAmount.toLocaleString()}</p>
                       <p
-                        className={`text-[10px] font-medium uppercase tracking-wider text-[#4ade80]`}
+                        className={`text-[10px] font-medium uppercase tracking-wider text-[#E8705A]`}
                       >
                         {sale.paymentStatus}
                       </p>
