@@ -39,7 +39,8 @@ const api = {
     update: (id, data) => ipcRenderer.invoke('customers:update', { id, data }),
     delete: (id) => ipcRenderer.invoke('customers:delete', id),
     recordPayment: (customerId, paymentData) =>
-      ipcRenderer.invoke('customers:recordPayment', { customerId, paymentData })
+      ipcRenderer.invoke('customers:recordPayment', { customerId, paymentData }),
+    getDetails: (params) => ipcRenderer.invoke('customers:getDetails', params)
   },
   purchaseOrders: {
     getAll: (params) => ipcRenderer.invoke('purchaseOrders:getAll', params),

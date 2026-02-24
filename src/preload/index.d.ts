@@ -51,6 +51,7 @@ declare global {
         delete: (id: string) => Promise<any>
         getById: (id: string) => Promise<any>
         recordPayment: (customerId: string, paymentData: any) => Promise<any>
+        getDetails: (params: { customerId: string; page?: number; pageSize?: number }) => Promise<any>
       }
       inventory: {
         getHistory: (params: { productId: string; storeId: string; limit?: number }) => Promise<any>

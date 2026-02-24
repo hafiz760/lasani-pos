@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { DataPage } from '@renderer/components/shared/data-page'
 import { Button } from '@renderer/components/ui/button'
 import { LoadingButton } from '@renderer/components/ui/loading-button'
@@ -34,6 +35,7 @@ import {
 const PAYMENT_METHODS = ['Cash', 'Card', 'Bank Transfer']
 
 export default function CustomersPage() {
+  const navigate = useNavigate()
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
   const [searchTerm, setSearchTerm] = useState('')
@@ -293,6 +295,7 @@ export default function CustomersPage() {
         onPageSizeChange={setPageSize}
         onSearchChange={setSearchTerm}
         searchTerm={searchTerm}
+        onRowClick={(item) => navigate(`/dashboard/customers/${item._id}`)}
       />
 
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>

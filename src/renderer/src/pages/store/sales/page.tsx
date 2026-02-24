@@ -5,7 +5,6 @@ import type { DateRange } from 'react-day-picker'
 import { format } from 'date-fns'
 import { Badge } from '@renderer/components/ui/badge'
 import { Button } from '@renderer/components/ui/button'
-import { ScrollArea } from '@renderer/components/ui/scroll-area'
 import {
   Table,
   TableBody,

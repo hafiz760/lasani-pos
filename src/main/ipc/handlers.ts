@@ -1559,6 +1559,53 @@ export function registerIpcHandlers() {
     }
   })
 
+  ipcMain.handle('customers:getDetails', async (_event, { customerId, page = 1, pageSize = 20 }) => {
+    try {
+      const customer = await models.Customer.findById(customerId).lean()
+      if (!customer) return { success: false, error: 'Customer not found' }
+
+      const salesQuery = { customer: customerId }
+      const totalSales = await models.Sale.countDocuments(salesQuery)
+      const sales = await models.Sale.find(salesQuery)
+        .sort({ saleDate: -1 })
+        .skip((page - 1) * pageSize)
+        .limit(pageSize)
+        .lean()
+
+      // Aggregate stats across ALL sales for this customer
+      const allSales = await models.Sale.find(salesQuery)
+        .select('totalAmount paidAmount paymentStatus profitAmount refundedAmount')
+        .lean()
+
+      const stats = {
+        totalSalesCount: allSales.length,
+        totalRevenue: allSales.reduce((sum, s) => sum + (s.totalAmount || 0), 0),
+        totalPaid: allSales.reduce((sum, s) => sum + (s.paidAmount || 0), 0),
+        totalPending: allSales.reduce(
+          (sum, s) => sum + Math.max(0, (s.totalAmount || 0) - (s.paidAmount || 0)),
+          0
+        ),
+        totalProfit: allSales.reduce((sum, s) => sum + (s.profitAmount || 0), 0),
+        totalRefunded: allSales.reduce((sum, s) => sum + (s.refundedAmount || 0), 0),
+        paidCount: allSales.filter((s) => s.paymentStatus === 'PAID').length,
+        pendingCount: allSales.filter((s) => s.paymentStatus === 'PENDING').length,
+        partialCount: allSales.filter((s) => s.paymentStatus === 'PARTIAL').length
+      }
+
+      return toJSON({
+        success: true,
+        customer,
+        sales,
+        stats,
+        totalSales,
+        page,
+        totalPages: Math.ceil(totalSales / pageSize)
+      })
+    } catch (error: any) {
+      return { success: false, error: error.message }
+    }
+  })
+
   ipcMain.handle('customers:recordPayment', async (_event, { customerId, paymentData }) => {
     try {
       const customer = await models.Customer.findById(customerId)
@@ -2744,7 +2791,6 @@ export function registerIpcHandlers() {
       } else if (period === 'month') {
         // Weekly chart for this month
         const weekMap = new Map<string, number>()
-        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
         const weeksInMonth = Math.ceil((now.getDate()) / 7)
         for (let w = 1; w <= Math.max(weeksInMonth, 4); w++) {
           weekMap.set(`Week ${w}`, 0)

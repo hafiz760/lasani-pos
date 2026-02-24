@@ -220,13 +220,7 @@ export default function SalesReportsPage() {
         </Badge>
       )
     },
-    {
-      header: 'Seller',
-      accessor: 'soldBy.fullName',
-      render: (item: any) => (
-        <span className="text-muted-foreground capitalize">{item.soldBy?.fullName || 'Admin'}</span>
-      )
-    },
+
     {
       header: 'Actions',
       accessor: '_id',

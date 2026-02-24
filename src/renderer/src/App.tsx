@@ -42,6 +42,7 @@ import TransactionsPrintPreviewPage from './pages/store/accounting/transactions/
 import EditSimpleProduct from '@renderer/pages/store/inventory/products/EditSimpleProduct'
 import EditRawMaterialProduct from '@renderer/pages/store/inventory/products/EditRawMaterialProduct'
 import CustomersPage from '@renderer/pages/store/customers/page'
+import CustomerDetailPage from '@renderer/pages/store/customers/detail'
 import CustomerReportPage from './pages/store/reports/customers/page'
 import ExpenseReportPage from './pages/store/reports/expenses/page'
 import TransactionsReportPage from './pages/store/reports/transactions/page'
@@ -187,6 +188,7 @@ function App(): React.JSX.Element {
             <Route path="purchases/suppliers" element={<SuppliersPage />} />
             <Route path="purchases/suppliers/:id" element={<SupplierDetails />} />
             <Route path="customers" element={<CustomersPage />} />
+            <Route path="customers/:id" element={<CustomerDetailPage />} />
             <Route path="purchases/orders" element={<PurchaseOrdersPage />} />
             <Route path="purchases/orders/create" element={<CreatePurchaseOrder />} />
             <Route path="purchases/orders/:id/edit" element={<EditPurchaseOrder />} />
