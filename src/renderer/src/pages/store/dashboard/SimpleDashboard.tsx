@@ -248,8 +248,12 @@ export default function SimpleDashboard({ stats: initialStats }: SimpleDashboard
                 <AlertTriangle className="h-5 w-5 text-red-500" />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-[11px] sm:text-xs font-medium text-muted-foreground">Low Stock</p>
-                <h3 className="text-base sm:text-xl font-bold">{stats?.lowStockCount || 0} Items</h3>
+                <p className="text-[11px] sm:text-xs font-medium text-muted-foreground">
+                  Low Stock
+                </p>
+                <h3 className="text-base sm:text-xl font-bold">
+                  {stats?.lowStockCount || 0} Items
+                </h3>
               </div>
             </CardContent>
           </Card>
@@ -306,7 +310,10 @@ export default function SimpleDashboard({ stats: initialStats }: SimpleDashboard
                         borderRadius: '8px',
                         fontSize: '12px'
                       }}
-                      formatter={(value: any) => [`Rs. ${Number(value).toLocaleString()}`, 'Revenue']}
+                      formatter={(value: any) => [
+                        `Rs. ${Number(value).toLocaleString()}`,
+                        'Revenue'
+                      ]}
                       labelStyle={{ color: 'hsl(var(--muted-foreground))' }}
                       cursor={{ fill: 'hsl(var(--accent))', opacity: 0.3 }}
                     />
@@ -362,12 +369,13 @@ export default function SimpleDashboard({ stats: initialStats }: SimpleDashboard
                     <div className="ml-auto text-right shrink-0">
                       <p className="text-sm font-bold">Rs. {sale.totalAmount.toLocaleString()}</p>
                       <p
-                        className={`text-[10px] font-medium uppercase tracking-wider ${sale.paymentStatus === 'PAID'
-                          ? 'text-emerald-500'
-                          : sale.paymentStatus === 'PARTIAL'
-                            ? 'text-orange-500'
-                            : 'text-red-500'
-                          }`}
+                        className={`text-[10px] font-medium uppercase tracking-wider ${
+                          sale.paymentStatus === 'PAID'
+                            ? 'text-emerald-500'
+                            : sale.paymentStatus === 'PARTIAL'
+                              ? 'text-orange-500'
+                              : 'text-red-500'
+                        }`}
                       >
                         {sale.paymentStatus}
                       </p>
@@ -388,7 +396,7 @@ export default function SimpleDashboard({ stats: initialStats }: SimpleDashboard
       {/* Reports & Analytics */}
       <div className="space-y-4">
         <h2 className="text-lg font-bold text-foreground">Reports & Analytics</h2>
-        <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 grid-cols-2 sm:grid-cols-2 lg:grid-cols-4">
           {[
             {
               title: 'Sales Report',
@@ -422,16 +430,16 @@ export default function SimpleDashboard({ stats: initialStats }: SimpleDashboard
             <motion.div key={report.title} whileHover={{ y: -3 }} className="h-full">
               <Button
                 onClick={() => navigate(report.href)}
-                className="w-full h-full p-5 flex items-center gap-4 bg-card border border-border hover:border-[#E8705A] hover:bg-[#E8705A]/5 transition-all rounded-xl group justify-start"
+                className="w-full h-full p-5 sm:p-6 flex flex-col items-center justify-center gap-3 sm:gap-4 bg-card border border-border hover:border-[#E8705A] hover:bg-[#E8705A]/5 transition-all rounded-xl group"
                 variant="ghost"
               >
                 <div
-                  className="h-11 w-11 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform"
+                  className="h-11 w-11 sm:h-12 sm:w-12 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform"
                   style={{ backgroundColor: `${report.color}15` }}
                 >
-                  <report.icon className="h-5 w-5" style={{ color: report.color }} />
+                  <report.icon className="h-5 w-5 sm:h-6 sm:w-6" style={{ color: report.color }} />
                 </div>
-                <div className="text-left">
+                <div className="text-center">
                   <div className="font-semibold text-sm text-foreground">{report.title}</div>
                   <div className="text-[11px] text-muted-foreground font-normal">
                     {report.description}
@@ -446,7 +454,7 @@ export default function SimpleDashboard({ stats: initialStats }: SimpleDashboard
       {/* Quick Operations */}
       <div className="space-y-4">
         <h2 className="text-lg font-bold text-foreground">Quick Operations</h2>
-        <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-6">
+        <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
           {quickActions.map((action) => (
             <motion.div key={action.title} whileHover={{ y: -3 }} className="h-full">
               <Button

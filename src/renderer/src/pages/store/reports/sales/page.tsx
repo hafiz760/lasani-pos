@@ -210,7 +210,7 @@ export default function SalesReportsPage() {
         <Badge
           className={
             item.paymentStatus === 'PAID'
-              ? 'bg-[#E8705A]/10 text-[#E8705A] border-[#E8705A]/20'
+              ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
               : item.paymentStatus === 'PARTIAL'
                 ? 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20'
                 : 'bg-red-500/10 text-red-500 border-red-500/20'
@@ -411,9 +411,10 @@ export default function SalesReportsPage() {
                       onClick={() => setPaymentMethod(method)}
                       className={`
                         cursor-pointer border rounded-lg p-2 text-center text-sm transition-all
-                        ${paymentMethod === method
-                          ? 'bg-[#E8705A]/10 border-[#E8705A] text-[#E8705A] font-bold'
-                          : 'bg-background border-border hover:border-gray-400'
+                        ${
+                          paymentMethod === method
+                            ? 'bg-[#E8705A]/10 border-[#E8705A] text-[#E8705A] font-bold'
+                            : 'bg-background border-border hover:border-gray-400'
                         }
                       `}
                     >
