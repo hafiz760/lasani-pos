@@ -51,7 +51,11 @@ declare global {
         delete: (id: string) => Promise<any>
         getById: (id: string) => Promise<any>
         recordPayment: (customerId: string, paymentData: any) => Promise<any>
-        getDetails: (params: { customerId: string; page?: number; pageSize?: number }) => Promise<any>
+        getDetails: (params: {
+          customerId: string
+          page?: number
+          pageSize?: number
+        }) => Promise<any>
       }
       inventory: {
         getHistory: (params: { productId: string; storeId: string; limit?: number }) => Promise<any>
@@ -158,9 +162,17 @@ declare global {
       }
       config: {
         get: () => Promise<{ success: boolean; data?: any; error?: string }>
-        save: (data: any) => Promise<{ success: boolean; error?: string }>
-        testConnection: (mongoUri: string) => Promise<{ success: boolean; message?: string; error?: string }>
-        getConnectionStatus: () => Promise<{ success: boolean; connected?: boolean; state?: number; error?: string }>
+        seedStarterData: () => Promise<{ success: boolean; message?: string; error?: string }>
+        save: (data: any) => Promise<{ success: boolean; message?: string; error?: string }>
+        testConnection: (
+          mongoUri: string
+        ) => Promise<{ success: boolean; message?: string; error?: string }>
+        getConnectionStatus: () => Promise<{
+          success: boolean
+          connected?: boolean
+          state?: number
+          error?: string
+        }>
       }
     }
   }

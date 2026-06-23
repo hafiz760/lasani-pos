@@ -2,79 +2,86 @@ import mongoose from 'mongoose'
 import * as dotenv from 'dotenv'
 import * as path from 'path'
 import { app } from 'electron'
+import { configManager } from './config-manager'
 
-// Check if running in production (packaged app)
-const isProduction = app.isPackaged
+export type DatabaseConnectionSource = 'development-environment' | 'saved-configuration' | 'none'
 
-let MONGODB_URI: string | undefined
-
-if (isProduction) {
-  // PRODUCTION: Use hardcoded connection or config file
-  console.log('🏭 Running in PRODUCTION mode')
-
-  // Option A: Hardcoded (for single deployment)
-  MONGODB_URI = 'mongodb://localhost:27017/lasani-pos-database'
-
-  // Option B: Read from config file in userData directory (uncomment to use)
-  // const configPath = path.join(app.getPath('userData'), 'config.json')
-  // try {
-  //   const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'))
-  //   MONGODB_URI = config.MONGODB_URI
-  // } catch (error) {
-  //   console.error('❌ Failed to load config.json:', error)
-  //   MONGODB_URI = 'mongodb://localhost:27017/lasani-pos-database' // fallback
-  // }
-} else {
-  // DEVELOPMENT: Use .env file
-  console.log('🔧 Running in DEVELOPMENT mode')
-  const envPath = path.resolve(process.cwd(), '.env')
-  console.log('🔍 Looking for .env at:', envPath)
-
-  const result = dotenv.config({ path: envPath })
-  if (result.error) {
-    console.error('❌ Failed to load .env file:', result.error)
-  } else {
-    console.log('✅ .env file loaded successfully')
-  }
-
-  MONGODB_URI = process.env.MONGODB_URI
+interface ConnectionResult {
+  success: boolean
+  error?: string
+  source: DatabaseConnectionSource
 }
 
-console.log('📍 MONGODB_URI:', MONGODB_URI)
-let isConnected = false
+function loadDevelopmentEnvironment(): void {
+  if (!app.isPackaged) {
+    console.log('Loading development environment configuration')
+    const envPath = path.resolve(process.cwd(), '.env')
+    dotenv.config({ path: envPath })
+  }
+}
 
-export async function connectToDatabase(): Promise<{ success: boolean; error?: string }> {
-  if (isConnected) {
-    console.log('Already connected to MongoDB')
-    return { success: true }
+function getConnectionConfiguration(): {
+  uri?: string
+  source: DatabaseConnectionSource
+} {
+  const developmentUri = !app.isPackaged ? process.env.MONGODB_URI?.trim() : undefined
+
+  if (developmentUri) {
+    return { uri: developmentUri, source: 'development-environment' }
+  }
+
+  const savedUri = configManager.getMongoURI()
+  if (savedUri) {
+    return { uri: savedUri, source: 'saved-configuration' }
+  }
+
+  return { source: 'none' }
+}
+
+loadDevelopmentEnvironment()
+
+export async function connectToDatabase(): Promise<ConnectionResult> {
+  const { uri, source } = getConnectionConfiguration()
+
+  if (mongoose.connection.readyState === 1) {
+    return { success: true, source }
   }
 
   try {
-    if (!MONGODB_URI) {
-      const error = 'MONGODB_URI is not set'
-      console.error('❌', error)
-      return { success: false, error }
+    if (!uri) {
+      return {
+        success: false,
+        source,
+        error: 'Database connection has not been configured.'
+      }
     }
 
-    const db = await mongoose.connect(MONGODB_URI)
+    await mongoose.connect(uri)
 
-    isConnected = db.connections[0].readyState === 1
-    console.log('✅ Connected to MongoDB')
-    return { success: true }
-  } catch (error: any) {
-    console.error('❌ MongoDB connection error:', error)
-    return { success: false, error: error.message || 'Connection failed' }
+    console.log(`Connected to MongoDB using ${source}`)
+    return { success: true, source }
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Connection failed'
+    console.error('MongoDB connection error:', message)
+    return { success: false, source, error: message }
   }
 }
 
-export async function disconnectFromDatabase() {
-  if (!isConnected) return
+export async function reconnectToDatabase(): Promise<ConnectionResult> {
+  if (mongoose.connection.readyState !== 0) {
+    await mongoose.disconnect()
+  }
+
+  return connectToDatabase()
+}
+
+export async function disconnectFromDatabase(): Promise<void> {
+  if (mongoose.connection.readyState === 0) return
 
   try {
     await mongoose.disconnect()
-    isConnected = false
-    console.log('Disconnected from MongoDB')
-  } catch (error) {
-    console.error('Error disconnecting from MongoDB:', error)
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown disconnect error'
+    console.error('MongoDB disconnect error:', message)
   }
 }

@@ -181,8 +181,9 @@ export default function ExpensesPage() {
       accessor: 'amount',
       render: (item: any) => (
         <span
-          className={`font-bold ${item.transactionType === 'DEBIT' ? 'text-emerald-500' : 'text-red-400'
-            }`}
+          className={`font-bold ${
+            item.transactionType === 'DEBIT' ? 'text-emerald-500' : 'text-red-400'
+          }`}
         >
           {item.transactionType === 'DEBIT' ? '' : '-'}Rs. {item.amount?.toLocaleString()}
         </span>

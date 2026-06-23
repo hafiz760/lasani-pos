@@ -191,7 +191,13 @@ export default function POSPage() {
         if (isDropdownOpen) {
           setIsDropdownOpen(false)
           setSelectedIndex(0)
-        } else if (!meterSheetOpen && !creditDialogOpen && !showReceipt && !stockAlert.open && !overlayClosedRef.current) {
+        } else if (
+          !meterSheetOpen &&
+          !creditDialogOpen &&
+          !showReceipt &&
+          !stockAlert.open &&
+          !overlayClosedRef.current
+        ) {
           e.preventDefault()
           navigate(-1)
         }
@@ -211,7 +217,15 @@ export default function POSPage() {
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [cart, isSubmitting, showReceipt, isDropdownOpen, meterSheetOpen, creditDialogOpen, stockAlert.open])
+  }, [
+    cart,
+    isSubmitting,
+    showReceipt,
+    isDropdownOpen,
+    meterSheetOpen,
+    creditDialogOpen,
+    stockAlert.open
+  ])
 
   // Click outside to close dropdown
   useEffect(() => {
@@ -530,7 +544,9 @@ export default function POSPage() {
       setIsEditingMeters(false)
       // Block Escape-navigation briefly so closing the sheet doesn't also exit POS
       overlayClosedRef.current = true
-      setTimeout(() => { overlayClosedRef.current = false }, 200)
+      setTimeout(() => {
+        overlayClosedRef.current = false
+      }, 200)
     }
   }
 
@@ -869,10 +885,11 @@ export default function POSPage() {
                     <div
                       key={product._id}
                       data-product-item
-                      className={`flex items-center gap-4 p-3 rounded-lg cursor-pointer transition-all border-b border-border/30 last:border-0 ${index === selectedIndex
-                        ? 'bg-primary/20 ring-2 ring-primary/50'
-                        : 'hover:bg-primary/10'
-                        }`}
+                      className={`flex items-center gap-4 p-3 rounded-lg cursor-pointer transition-all border-b border-border/30 last:border-0 ${
+                        index === selectedIndex
+                          ? 'bg-primary/20 ring-2 ring-primary/50'
+                          : 'hover:bg-primary/10'
+                      }`}
                       onClick={() => {
                         addToCart(product)
                         setSearch('')
@@ -910,10 +927,11 @@ export default function POSPage() {
                           </span>
                           <Badge
                             variant="outline"
-                            className={`text-[9px] font-black h-4 px-1 ${product.stockLevel < 5
-                              ? 'text-red-500 border-red-500/20'
-                              : 'text-green-500 border-green-500/20'
-                              }`}
+                            className={`text-[9px] font-black h-4 px-1 ${
+                              product.stockLevel < 5
+                                ? 'text-red-500 border-red-500/20'
+                                : 'text-green-500 border-green-500/20'
+                            }`}
                           >
                             {product.stockLevel} IN STOCK
                           </Badge>
@@ -1212,10 +1230,11 @@ export default function POSPage() {
                             key={method}
                             type="button"
                             variant={field.value === method ? 'default' : 'outline'}
-                            className={`h-12 px-3 text-xs sm:text-[11px] font-black leading-snug whitespace-normal border-2 transition-all duration-200 ${field.value === method
-                              ? 'border-primary'
-                              : 'text-foreground border-border hover:bg-muted'
-                              }`}
+                            className={`h-12 px-3 text-xs sm:text-[11px] font-black leading-snug whitespace-normal border-2 transition-all duration-200 ${
+                              field.value === method
+                                ? 'border-primary'
+                                : 'text-foreground border-border hover:bg-muted'
+                            }`}
                             onClick={() => {
                               field.onChange(method)
                               if (method === 'Bank Transfer') {
@@ -1251,10 +1270,11 @@ export default function POSPage() {
                               key={channel}
                               type="button"
                               variant={field.value === channel ? 'default' : 'outline'}
-                              className={`h-11 text-xs font-black uppercase border-2 transition-all ${field.value === channel
-                                ? 'border-primary'
-                                : 'bg-transparent text-foreground border-border hover:bg-muted'
-                                }`}
+                              className={`h-11 text-xs font-black uppercase border-2 transition-all ${
+                                field.value === channel
+                                  ? 'border-primary'
+                                  : 'bg-transparent text-foreground border-border hover:bg-muted'
+                              }`}
                               onClick={() => field.onChange(channel)}
                             >
                               {channel}
@@ -1473,10 +1493,11 @@ export default function POSPage() {
                 <Button
                   type="button"
                   variant={customerMode === 'existing' ? 'default' : 'outline'}
-                  className={`h-10 text-xs font-black uppercase border-2 transition-all ${customerMode === 'existing'
-                    ? 'border-primary'
-                    : 'bg-transparent text-foreground border-border'
-                    }`}
+                  className={`h-10 text-xs font-black uppercase border-2 transition-all ${
+                    customerMode === 'existing'
+                      ? 'border-primary'
+                      : 'bg-transparent text-foreground border-border'
+                  }`}
                   onClick={() => setCustomerMode('existing')}
                 >
                   Existing Customer
@@ -1484,10 +1505,11 @@ export default function POSPage() {
                 <Button
                   type="button"
                   variant={customerMode === 'new' ? 'default' : 'outline'}
-                  className={`h-10 text-xs font-black uppercase border-2 transition-all ${customerMode === 'new'
-                    ? 'border-primary'
-                    : 'bg-transparent text-foreground border-border'
-                    }`}
+                  className={`h-10 text-xs font-black uppercase border-2 transition-all ${
+                    customerMode === 'new'
+                      ? 'border-primary'
+                      : 'bg-transparent text-foreground border-border'
+                  }`}
                   onClick={() => setCustomerMode('new')}
                 >
                   Add New

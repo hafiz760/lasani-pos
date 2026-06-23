@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/immutability */
 import { useState, useEffect } from 'react'
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { Toaster } from 'sonner'
@@ -96,7 +97,6 @@ function App(): React.JSX.Element {
       setUser(JSON.parse(savedUser))
     }
 
-    // Check database connection on startup
     checkDatabaseConnection()
   }, [])
 

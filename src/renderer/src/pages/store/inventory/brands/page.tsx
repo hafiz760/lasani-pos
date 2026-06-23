@@ -1,168 +1,166 @@
-import { useState, useEffect } from "react";
-import { DataPage } from "@renderer/components/shared/data-page";
-import { LoadingButton } from "@renderer/components/ui/loading-button";
-import { Button } from "@renderer/components/ui/button";
-import { Edit, Trash2 } from "lucide-react";
-import { toast } from "sonner";
+import { useState, useEffect } from 'react'
+import { DataPage } from '@renderer/components/shared/data-page'
+import { LoadingButton } from '@renderer/components/ui/loading-button'
+import { Button } from '@renderer/components/ui/button'
+import { Edit, Trash2 } from 'lucide-react'
+import { toast } from 'sonner'
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
-} from "@renderer/components/ui/dialog";
-import { Input } from "@renderer/components/ui/input";
-import { DeleteConfirm } from "@renderer/components/shared/delete-confirm";
+  DialogFooter
+} from '@renderer/components/ui/dialog'
+import { Input } from '@renderer/components/ui/input'
+import { DeleteConfirm } from '@renderer/components/shared/delete-confirm'
 
-import { z } from "zod";
-import { useForm, SubmitHandler } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from 'zod'
+import { useForm, SubmitHandler } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
 import {
   Form,
   FormControl,
   FormField,
   FormItem,
   FormLabel,
-  FormMessage,
-} from "@renderer/components/ui/form";
+  FormMessage
+} from '@renderer/components/ui/form'
 
 const brandSchema = z.object({
-  name: z.string().min(2, "Brand name must be at least 2 characters"),
-});
+  name: z.string().min(2, 'Brand name must be at least 2 characters')
+})
 
-type BrandFormValues = z.infer<typeof brandSchema>;
+type BrandFormValues = z.infer<typeof brandSchema>
 
 export default function BrandsPage() {
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(20);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const [editingBrand, setEditingBrand] = useState<any>(null);
-  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(20)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [isFormOpen, setIsFormOpen] = useState(false)
+  const [editingBrand, setEditingBrand] = useState<any>(null)
+  const [deleteId, setDeleteId] = useState<string | null>(null)
 
-  const [brands, setBrands] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [totalRecords, setTotalRecords] = useState(0);
-  const [totalPages, setTotalPages] = useState(0);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
+  const [brands, setBrands] = useState<any[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [totalRecords, setTotalRecords] = useState(0)
+  const [totalPages, setTotalPages] = useState(0)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
 
-  const [currentStore, setCurrentStore] = useState<any>(null);
+  const [currentStore, setCurrentStore] = useState<any>(null)
 
   useEffect(() => {
-    const storeData = localStorage.getItem('selectedStore');
+    const storeData = localStorage.getItem('selectedStore')
     if (storeData) {
-      setCurrentStore(JSON.parse(storeData));
+      setCurrentStore(JSON.parse(storeData))
     }
-  }, []);
+  }, [])
 
   const loadBrands = async () => {
-    if (!currentStore?._id) return;
-    setIsLoading(true);
+    if (!currentStore?._id) return
+    setIsLoading(true)
     try {
       const result = await window.api.brands.getAll({
         storeId: currentStore._id,
         page,
         pageSize,
-        search: searchTerm,
-      });
+        search: searchTerm
+      })
       if (result.success) {
-        setBrands(result.data);
-        setTotalRecords(result.total || result.data.length);
-        setTotalPages(result.totalPages || 1);
+        setBrands(result.data)
+        setTotalRecords(result.total || result.data.length)
+        setTotalPages(result.totalPages || 1)
       }
     } catch (error) {
-      toast.error("Failed to load brands");
+      toast.error('Failed to load brands')
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   useEffect(() => {
-    loadBrands();
-  }, [currentStore?._id, page, pageSize, searchTerm]);
+    loadBrands()
+  }, [currentStore?._id, page, pageSize, searchTerm])
 
   const form = useForm<BrandFormValues>({
     resolver: zodResolver(brandSchema),
     defaultValues: {
-      name: "",
-    },
-  });
+      name: ''
+    }
+  })
 
   const onSubmit: SubmitHandler<BrandFormValues> = async (values) => {
     if (!currentStore?._id) {
-      toast.error("No store selected");
-      return;
+      toast.error('No store selected')
+      return
     }
-    setIsSubmitting(true);
+    setIsSubmitting(true)
     try {
-      let result;
+      let result
       if (editingBrand) {
         result = await window.api.brands.update(editingBrand._id, {
           name: values.name,
-          store: currentStore._id,
-        });
+          store: currentStore._id
+        })
       } else {
         result = await window.api.brands.create({
           name: values.name,
-          store: currentStore._id,
-        });
+          store: currentStore._id
+        })
       }
 
       if (result.success) {
-        toast.success(
-          `Brand ${editingBrand ? "updated" : "created"} successfully`
-        );
-        setIsFormOpen(false);
-        setEditingBrand(null);
-        form.reset();
-        loadBrands();
+        toast.success(`Brand ${editingBrand ? 'updated' : 'created'} successfully`)
+        setIsFormOpen(false)
+        setEditingBrand(null)
+        form.reset()
+        loadBrands()
       } else {
-        toast.error("Error: " + result.error);
+        toast.error('Error: ' + result.error)
       }
     } catch (error: any) {
-      toast.error("Error: " + error.message);
+      toast.error('Error: ' + error.message)
     } finally {
-      setIsSubmitting(false);
+      setIsSubmitting(false)
     }
-  };
+  }
 
   const handleDelete = async () => {
-    if (!deleteId) return;
-    setIsDeleting(true);
+    if (!deleteId) return
+    setIsDeleting(true)
     try {
-      const result = await window.api.brands.delete(deleteId);
+      const result = await window.api.brands.delete(deleteId)
       if (result.success) {
-        toast.success("Brand deleted successfully");
-        loadBrands();
+        toast.success('Brand deleted successfully')
+        loadBrands()
       } else {
-        toast.error("Error deleting brand: " + result.error);
+        toast.error('Error deleting brand: ' + result.error)
       }
     } catch (error: any) {
-      toast.error("Error: " + error.message);
+      toast.error('Error: ' + error.message)
     } finally {
-      setDeleteId(null);
-      setIsDeleting(false);
+      setDeleteId(null)
+      setIsDeleting(false)
     }
-  };
+  }
 
   const openEdit = (brand: any) => {
-    setEditingBrand(brand);
-    form.reset({ name: brand.name });
-    setIsFormOpen(true);
-  };
+    setEditingBrand(brand)
+    form.reset({ name: brand.name })
+    setIsFormOpen(true)
+  }
 
   const openAdd = () => {
-    setEditingBrand(null);
-    form.reset({ name: "" });
-    setIsFormOpen(true);
-  };
+    setEditingBrand(null)
+    form.reset({ name: '' })
+    setIsFormOpen(true)
+  }
 
   const columns = [
-    { header: "Brand Name", accessor: "name" },
+    { header: 'Brand Name', accessor: 'name' },
     {
-      header: "Actions",
-      accessor: "_id",
+      header: 'Actions',
+      accessor: '_id',
       render: (item: any) => (
         <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
           <Button
@@ -182,9 +180,9 @@ export default function BrandsPage() {
             <Trash2 className="w-4 h-4" />
           </Button>
         </div>
-      ),
-    },
-  ];
+      )
+    }
+  ]
 
   if (!currentStore) {
     return (
@@ -192,7 +190,7 @@ export default function BrandsPage() {
         <h2 className="text-2xl font-bold">No Store Selected</h2>
         <p className="text-muted-foreground">Please select a store to manage brands.</p>
       </div>
-    );
+    )
   }
 
   return (
@@ -213,34 +211,29 @@ export default function BrandsPage() {
         pageSize={pageSize}
         onPageChange={setPage}
         onPageSizeChange={(newSize) => {
-          setPageSize(newSize);
-          setPage(1);
+          setPageSize(newSize)
+          setPage(1)
         }}
         searchTerm={searchTerm}
         onSearchChange={(term) => {
-          setSearchTerm(term);
-          setPage(1);
+          setSearchTerm(term)
+          setPage(1)
         }}
       />
 
       <Dialog
         open={isFormOpen}
         onOpenChange={(open) => {
-          setIsFormOpen(open);
-          if (!open) form.reset();
+          setIsFormOpen(open)
+          if (!open) form.reset()
         }}
       >
         <DialogContent className="bg-background border-border text-foreground">
           <DialogHeader>
-            <DialogTitle>
-              {editingBrand ? "Edit Brand" : "Add New Brand"}
-            </DialogTitle>
+            <DialogTitle>{editingBrand ? 'Edit Brand' : 'Add New Brand'}</DialogTitle>
           </DialogHeader>
           <Form {...form}>
-            <form
-              onSubmit={form.handleSubmit(onSubmit)}
-              className="space-y-4 py-4"
-            >
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
               <FormField
                 control={form.control}
                 name="name"
@@ -270,10 +263,10 @@ export default function BrandsPage() {
                 <LoadingButton
                   type="submit"
                   isLoading={isSubmitting}
-                  loadingText={editingBrand ? "Updating..." : "Creating..."}
+                  loadingText={editingBrand ? 'Updating...' : 'Creating...'}
                   className="bg-[#E8705A] hover:bg-[#D4604C] text-black font-semibold"
                 >
-                  {editingBrand ? "Update" : "Create"}
+                  {editingBrand ? 'Update' : 'Create'}
                 </LoadingButton>
               </DialogFooter>
             </form>
@@ -289,5 +282,5 @@ export default function BrandsPage() {
         description="This will permanently delete this brand. Products from this brand will need to be reassigned."
       />
     </>
-  );
+  )
 }

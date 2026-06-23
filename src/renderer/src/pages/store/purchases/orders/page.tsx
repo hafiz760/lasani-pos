@@ -1,124 +1,119 @@
-import { useState, useEffect } from "react";
-import {
-  Plus,
-  Search,
-  Truck,
-  Clock,
-  CheckCircle2,
-  Trash2,
-} from "lucide-react";
-import { Button } from "@renderer/components/ui/button";
-import { useNavigate } from "react-router-dom";
-import { Input } from "@renderer/components/ui/input";
+import { useState, useEffect } from 'react'
+import { Plus, Search, Truck, Clock, CheckCircle2, Trash2 } from 'lucide-react'
+import { Button } from '@renderer/components/ui/button'
+import { useNavigate } from 'react-router-dom'
+import { Input } from '@renderer/components/ui/input'
 import {
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableHeader,
-  TableRow,
-} from "@renderer/components/ui/table";
+  TableRow
+} from '@renderer/components/ui/table'
 
-import { Card, CardContent, CardHeader, CardTitle } from "@renderer/components/ui/card";
-import { Badge } from "@renderer/components/ui/badge";
-import { toast } from "sonner";
-import { format } from "date-fns";
-import { Pagination } from "@renderer/components/ui/pagination";
+import { Card, CardContent, CardHeader, CardTitle } from '@renderer/components/ui/card'
+import { Badge } from '@renderer/components/ui/badge'
+import { toast } from 'sonner'
+import { format } from 'date-fns'
+import { Pagination } from '@renderer/components/ui/pagination'
 
 export default function PurchaseOrdersPage() {
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(20);
-  const [searchTerm, setSearchTerm] = useState("");
-  const navigate = useNavigate();
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(20)
+  const [searchTerm, setSearchTerm] = useState('')
+  const navigate = useNavigate()
 
-  const [orders, setOrders] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [totalRecords, setTotalRecords] = useState(0);
-  const [totalPages, setTotalPages] = useState(0);
-  const [_isDeleting, setIsDeleting] = useState(false);
-  const [_isReceiving, setIsReceiving] = useState(false);
+  const [orders, setOrders] = useState<any[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [totalRecords, setTotalRecords] = useState(0)
+  const [totalPages, setTotalPages] = useState(0)
+  const [_isDeleting, setIsDeleting] = useState(false)
+  const [_isReceiving, setIsReceiving] = useState(false)
 
-  const [currentStore, setCurrentStore] = useState<any>(null);
+  const [currentStore, setCurrentStore] = useState<any>(null)
 
   useEffect(() => {
-    const storeData = localStorage.getItem('selectedStore');
+    const storeData = localStorage.getItem('selectedStore')
     if (storeData) {
-      setCurrentStore(JSON.parse(storeData));
+      setCurrentStore(JSON.parse(storeData))
     }
-  }, []);
+  }, [])
 
   const loadOrders = async () => {
-    if (!currentStore?._id) return;
-    setIsLoading(true);
+    if (!currentStore?._id) return
+    setIsLoading(true)
     try {
       const result = await window.api.purchaseOrders.getAll({
         storeId: currentStore._id,
         page,
         pageSize,
-        search: searchTerm,
-      });
+        search: searchTerm
+      })
       if (result.success) {
-        setOrders(result.data);
-        setTotalRecords(result.total || result.data.length);
-        setTotalPages(result.totalPages || 1);
+        setOrders(result.data)
+        setTotalRecords(result.total || result.data.length)
+        setTotalPages(result.totalPages || 1)
       }
     } catch (error) {
-      toast.error("Failed to load purchase orders");
+      toast.error('Failed to load purchase orders')
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   useEffect(() => {
-    loadOrders();
-  }, [currentStore?._id, page, pageSize, searchTerm]);
+    loadOrders()
+  }, [currentStore?._id, page, pageSize, searchTerm])
 
   const handleReceive = async (poId: string) => {
-    const confirmReceive = window.confirm("Are you sure you want to mark this order as received? This will update stock levels.");
-    if (!confirmReceive) return;
+    const confirmReceive = window.confirm(
+      'Are you sure you want to mark this order as received? This will update stock levels.'
+    )
+    if (!confirmReceive) return
 
-    setIsReceiving(true);
+    setIsReceiving(true)
     try {
-      toast.loading("Updating inventory...");
+      toast.loading('Updating inventory...')
       // In Electron version, we might need a specific handleReceive IPC if it involves complex logic
       // For now, let's assume update status to RECEIVED
-      const result = await window.api.purchaseOrders.update(poId, { status: "RECEIVED" });
-      toast.dismiss();
+      const result = await window.api.purchaseOrders.update(poId, { status: 'RECEIVED' })
+      toast.dismiss()
       if (result.success) {
-        toast.success("Order received and stock updated!");
-        loadOrders();
+        toast.success('Order received and stock updated!')
+        loadOrders()
       } else {
-        toast.error(result.error);
+        toast.error(result.error)
       }
     } catch (error: any) {
-      toast.dismiss();
-      toast.error("Error: " + error.message);
+      toast.dismiss()
+      toast.error('Error: ' + error.message)
     } finally {
-      setIsReceiving(false);
+      setIsReceiving(false)
     }
-  };
+  }
 
   const handleDelete = async (order: any) => {
     const confirmDelete = window.confirm(
       `Are you sure you want to delete ${order.poNumber}? If received, this will reverse the stock and accounting data.`
-    );
-    if (!confirmDelete) return;
+    )
+    if (!confirmDelete) return
 
-    setIsDeleting(true);
+    setIsDeleting(true)
     try {
-      const res = await window.api.purchaseOrders.delete(order._id);
+      const res = await window.api.purchaseOrders.delete(order._id)
       if (res.success) {
-        toast.success("Order deleted successfully");
-        loadOrders();
+        toast.success('Order deleted successfully')
+        loadOrders()
       } else {
-        toast.error(res.error);
+        toast.error(res.error)
       }
     } catch (error: any) {
-      toast.error("Error: " + error.message);
+      toast.error('Error: ' + error.message)
     } finally {
-      setIsDeleting(false);
+      setIsDeleting(false)
     }
-  };
+  }
 
   if (!currentStore) {
     return (
@@ -126,22 +121,18 @@ export default function PurchaseOrdersPage() {
         <h2 className="text-2xl font-bold">No Store Selected</h2>
         <p className="text-muted-foreground">Please select a store to manage purchase orders.</p>
       </div>
-    );
+    )
   }
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight text-foreground">
-            Purchase Orders
-          </h2>
-          <p className="text-muted-foreground">
-            Track and manage inventory procurement
-          </p>
+          <h2 className="text-3xl font-bold tracking-tight text-foreground">Purchase Orders</h2>
+          <p className="text-muted-foreground">Track and manage inventory procurement</p>
         </div>
         <Button
-          onClick={() => navigate("/dashboard/purchases/orders/create")}
+          onClick={() => navigate('/dashboard/purchases/orders/create')}
           className="bg-[#E8705A] hover:bg-[#D4604C] text-black font-semibold"
         >
           <Plus className="w-4 h-4 mr-2" />
@@ -159,7 +150,7 @@ export default function PurchaseOrdersPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {orders.filter((o: any) => o.status !== "RECEIVED").length}
+              {orders.filter((o: any) => o.status !== 'RECEIVED').length}
             </div>
           </CardContent>
         </Card>
@@ -172,7 +163,7 @@ export default function PurchaseOrdersPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {orders.filter((o: any) => o.status === "RECEIVED").length}
+              {orders.filter((o: any) => o.status === 'RECEIVED').length}
             </div>
           </CardContent>
         </Card>
@@ -185,10 +176,8 @@ export default function PurchaseOrdersPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              Rs.{" "}
-              {orders
-                .reduce((sum: any, o: any) => sum + (o.totalAmount || 0), 0)
-                .toLocaleString()}
+              Rs.{' '}
+              {orders.reduce((sum: any, o: any) => sum + (o.totalAmount || 0), 0).toLocaleString()}
             </div>
           </CardContent>
         </Card>
@@ -203,8 +192,8 @@ export default function PurchaseOrdersPage() {
               className="bg-muted border-border pl-10"
               value={searchTerm}
               onChange={(e) => {
-                setSearchTerm(e.target.value);
-                setPage(1);
+                setSearchTerm(e.target.value)
+                setPage(1)
               }}
             />
           </div>
@@ -213,38 +202,24 @@ export default function PurchaseOrdersPage() {
           <Table>
             <TableHeader className="border-border">
               <TableRow className="hover:bg-accent border-border">
-                <TableHead className="text-muted-foreground">
-                  Order Details
-                </TableHead>
-                <TableHead className="text-muted-foreground">
-                  Supplier
-                </TableHead>
+                <TableHead className="text-muted-foreground">Order Details</TableHead>
+                <TableHead className="text-muted-foreground">Supplier</TableHead>
                 <TableHead className="text-muted-foreground">Date</TableHead>
-                <TableHead className="text-muted-foreground">
-                  Total Amount
-                </TableHead>
+                <TableHead className="text-muted-foreground">Total Amount</TableHead>
                 <TableHead className="text-muted-foreground">Status</TableHead>
-                <TableHead className="text-right text-muted-foreground">
-                  Actions
-                </TableHead>
+                <TableHead className="text-right text-muted-foreground">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell
-                    colSpan={6}
-                    className="text-center py-8 text-muted-foreground"
-                  >
+                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                     Loading orders...
                   </TableCell>
                 </TableRow>
               ) : orders.length === 0 ? (
                 <TableRow>
-                  <TableCell
-                    colSpan={6}
-                    className="text-center py-8 text-muted-foreground italic"
-                  >
+                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground italic">
                     No purchase orders found.
                   </TableCell>
                 </TableRow>
@@ -257,38 +232,40 @@ export default function PurchaseOrdersPage() {
                   >
                     <TableCell className="font-medium">
                       <div className="flex flex-col">
-                        <span className="font-bold text-[#E8705A]">
-                          {order.poNumber}
-                        </span>
+                        <span className="font-bold text-[#E8705A]">{order.poNumber}</span>
                         <span className="text-[10px] text-muted-foreground">
                           {(order.items || []).length} Product(s)
                         </span>
                       </div>
                     </TableCell>
-                    <TableCell className="text-sm">
-                      {order.supplier?.name}
-                    </TableCell>
+                    <TableCell className="text-sm">{order.supplier?.name}</TableCell>
                     <TableCell className="text-sm text-muted-foreground">
-                      {order.purchaseDate ? format(new Date(order.purchaseDate), "MMM dd, yyyy") : "N/A"}
+                      {order.purchaseDate
+                        ? format(new Date(order.purchaseDate), 'MMM dd, yyyy')
+                        : 'N/A'}
                     </TableCell>
                     <TableCell className="text-sm font-bold text-[#E8705A]">
                       Rs. {(order.totalAmount || 0).toLocaleString()}
                     </TableCell>
                     <TableCell>
                       <Badge
-                        className={`${order.status === "RECEIVED"
-                          ? "bg-[#E8705A]/10 text-[#E8705A] border-[#E8705A]/20"
-                          : order.status === "CONFIRMED"
-                            ? "bg-blue-400/10 text-blue-400 border-blue-400/20"
-                            : "bg-gray-500/10 text-gray-400 border-gray-500/20"
-                          } border`}
+                        className={`${
+                          order.status === 'RECEIVED'
+                            ? 'bg-[#E8705A]/10 text-[#E8705A] border-[#E8705A]/20'
+                            : order.status === 'CONFIRMED'
+                              ? 'bg-blue-400/10 text-blue-400 border-blue-400/20'
+                              : 'bg-gray-500/10 text-gray-400 border-gray-500/20'
+                        } border`}
                       >
                         {order.status}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
-                        {order.status !== "RECEIVED" && (
+                      <div
+                        className="flex items-center justify-end gap-1"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {order.status !== 'RECEIVED' && (
                           <Button
                             variant="ghost"
                             size="icon"
@@ -322,8 +299,8 @@ export default function PurchaseOrdersPage() {
                 onPageChange={setPage}
                 pageSize={pageSize}
                 onPageSizeChange={(newSize) => {
-                  setPageSize(newSize);
-                  setPage(1);
+                  setPageSize(newSize)
+                  setPage(1)
                 }}
                 totalRecords={totalRecords}
               />
@@ -332,5 +309,5 @@ export default function PurchaseOrdersPage() {
         </CardContent>
       </Card>
     </div>
-  );
+  )
 }

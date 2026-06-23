@@ -8,7 +8,9 @@
   "homepage": "https://electron-vite.org",
   "scripts": {
     "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "lint": "eslint --cache .",
+    "lint:fix": "npm run lint -- --fix",
     "typecheck:node": "tsc --noEmit -p tsconfig.node.json --composite false",
     "typecheck:web": "tsc --noEmit -p tsconfig.web.json --composite false",
     "typecheck": "npm run typecheck:node && npm run typecheck:web",

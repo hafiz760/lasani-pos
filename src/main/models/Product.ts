@@ -248,9 +248,12 @@ const ProductSchema = new Schema<IProduct>(
 
 // Indexes
 ProductSchema.index({ store: 1, sku: 1 }, { unique: true })
-ProductSchema.index({ store: 1, barcode: 1 }, {
-  partialFilterExpression: { barcode: { $type: 'string' } }
-})
+ProductSchema.index(
+  { store: 1, barcode: 1 },
+  {
+    partialFilterExpression: { barcode: { $type: 'string' } }
+  }
+)
 ProductSchema.index({ store: 1 })
 ProductSchema.index({ category: 1 })
 ProductSchema.index({ productKind: 1 })
@@ -274,11 +277,7 @@ ProductSchema.pre('save', function () {
   }
 
   // COMBO_SET calculations (unchanged)
-  if (
-    this.productKind === 'COMBO_SET' &&
-    this.comboComponents &&
-    this.comboComponents.length > 0
-  ) {
+  if (this.productKind === 'COMBO_SET' && this.comboComponents && this.comboComponents.length > 0) {
     this.totalComboMeters = this.comboComponents.reduce((total, comp) => {
       return total + comp.meters
     }, 0)
@@ -289,7 +288,6 @@ ProductSchema.pre('save', function () {
     }
   }
 })
-
 
 // Next.js-friendly model export - prevents recompilation issues
 const ProductModel: Model<IProduct> =

@@ -88,12 +88,13 @@ export default function SalesDetailPage() {
     if (!sale) return 0
     // A refund is possible as long as there are items that haven't been fully returned
     const totalItems = sale.items.reduce((sum, i) => sum + i.quantity, 0)
-    const refundedItems = sale.refundHistory?.reduce((sum, h) =>
-      sum + h.items.reduce((s, i) => s + i.quantity, 0), 0) || 0
+    const refundedItems =
+      sale.refundHistory?.reduce(
+        (sum, h) => sum + h.items.reduce((s, i) => s + i.quantity, 0),
+        0
+      ) || 0
     return totalItems - refundedItems
   }, [sale])
-
-
 
   const loadSale = async () => {
     if (!id) return
@@ -137,16 +138,18 @@ export default function SalesDetailPage() {
     const content = `
       <div style="font-family: 'Inter', sans-serif; padding: 20px; color: #111;">
         <h2 style="margin: 0 0 8px;">Sale Detail</h2>
-        <div style="font-size: 12px; color: #6b7280;">Invoice: ${sale.invoiceNumber || sale._id
-      }</div>
+        <div style="font-size: 12px; color: #6b7280;">Invoice: ${
+          sale.invoiceNumber || sale._id
+        }</div>
         <div style="font-size: 12px; color: #6b7280;">Date: ${format(
-        new Date(sale.saleDate || sale.createdAt),
-        'MMM dd, yyyy HH:mm'
-      )}</div>
+          new Date(sale.saleDate || sale.createdAt),
+          'MMM dd, yyyy HH:mm'
+        )}</div>
 
         <div style="margin-top: 12px; border-top: 1px solid #e5e7eb; padding-top: 12px;">
-          <div><strong>Payment:</strong> ${sale.paymentMethod}${sale.paymentChannel ? ` (${sale.paymentChannel})` : ''
-      }</div>
+          <div><strong>Payment:</strong> ${sale.paymentMethod}${
+            sale.paymentChannel ? ` (${sale.paymentChannel})` : ''
+          }</div>
           <div><strong>Status:</strong> ${sale.paymentStatus}</div>
         </div>
 
@@ -161,28 +164,27 @@ export default function SalesDetailPage() {
           </thead>
           <tbody>
             ${sale.items
-        .map(
-          (item) => `
+              .map(
+                (item) => `
                   <tr style="border-bottom: 1px solid #e5e7eb;">
                     <td style="padding: 8px;">${item.productName || item.product?.name || '-'}</td>
                     <td style="padding: 8px; text-align: center;">${item.quantity}</td>
                     <td style="padding: 8px; text-align: right;">${formatCurrency(
-            item.sellingPrice || item.price || 0
-          )}</td>
+                      item.sellingPrice || item.price || 0
+                    )}</td>
                     <td style="padding: 8px; text-align: right;">${formatCurrency(
-            item.totalAmount
-          )}</td>
+                      item.totalAmount
+                    )}</td>
                   </tr>
                 `
-        )
-        .join('')}
+              )
+              .join('')}
           </tbody>
         </table>
       </div>
     `
     void printContent({ title: 'Sale Detail', content })
   }
-
 
   if (isLoading) {
     return (
@@ -497,7 +499,6 @@ export default function SalesDetailPage() {
           )}
         </CardContent>
       </Card>
-
     </div>
   )
 }

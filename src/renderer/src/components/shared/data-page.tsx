@@ -74,10 +74,10 @@ export function DataPage({
   const shouldFilterLocally = !onPageChange
   const filteredData = shouldFilterLocally
     ? data.filter((item) =>
-      Object.values(item).some((val) =>
-        String(val).toLowerCase().includes(searchTerm.toLowerCase())
+        Object.values(item).some((val) =>
+          String(val).toLowerCase().includes(searchTerm.toLowerCase())
+        )
       )
-    )
     : data
 
   const handleExportExcel = () => {

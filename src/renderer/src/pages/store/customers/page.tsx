@@ -4,7 +4,6 @@ import { DataPage } from '@renderer/components/shared/data-page'
 import { Button } from '@renderer/components/ui/button'
 import { LoadingButton } from '@renderer/components/ui/loading-button'
 
-
 import {
   Dialog,
   DialogContent,
@@ -26,11 +25,7 @@ import { toast } from 'sonner'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm, SubmitHandler } from 'react-hook-form'
 import { customerSchema, CustomerFormData } from '@renderer/lib/validations/customer.validation'
-import {
-  Pencil,
-  Trash2,
-  Wallet
-} from 'lucide-react'
+import { Pencil, Trash2, Wallet } from 'lucide-react'
 
 const PAYMENT_METHODS = ['Cash', 'Card', 'Bank Transfer']
 
@@ -52,8 +47,6 @@ export default function CustomersPage() {
   const [editingCustomer, setEditingCustomer] = useState<any>(null)
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null)
   const [deleteId, setDeleteId] = useState<string | null>(null)
-
-
 
   const [paymentAmount, setPaymentAmount] = useState('')
   const [paymentMethod, setPaymentMethod] = useState('Cash')
@@ -93,10 +86,6 @@ export default function CustomersPage() {
   useEffect(() => {
     loadCustomers()
   }, [currentStore?._id, page, pageSize, searchTerm])
-
-
-
-
 
   const form = useForm<CustomerFormData>({
     resolver: zodResolver(customerSchema) as any,
@@ -397,10 +386,11 @@ export default function CustomersPage() {
                     key={method}
                     type="button"
                     variant="outline"
-                    className={`h-10 text-xs font-semibold ${paymentMethod === method
-                      ? 'text-[#E8705A] border-[#E8705A] hover:bg-[#E8705A] hover:text-[#E8705A]'
-                      : 'bg-transparent'
-                      }`}
+                    className={`h-10 text-xs font-semibold ${
+                      paymentMethod === method
+                        ? 'text-[#E8705A] border-[#E8705A] hover:bg-[#E8705A] hover:text-[#E8705A]'
+                        : 'bg-transparent'
+                    }`}
                     onClick={() => setPaymentMethod(method)}
                   >
                     {method}

@@ -1,86 +1,86 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 @plugin "tailwindcss-animate";
 
 @source "../../../src";
 
 @theme {
-    --color-background: var(--background);
-    --color-foreground: var(--foreground);
-    --color-card: var(--card);
-    --color-card-foreground: var(--card-foreground);
-    --color-popover: var(--popover);
-    --color-popover-foreground: var(--popover-foreground);
-    --color-primary: var(--primary);
-    --color-primary-foreground: var(--primary-foreground);
-    --color-secondary: var(--secondary);
-    --color-secondary-foreground: var(--secondary-foreground);
-    --color-muted: var(--muted);
-    --color-muted-foreground: var(--muted-foreground);
-    --color-accent: var(--accent);
-    --color-accent-foreground: var(--accent-foreground);
-    --color-destructive: var(--destructive);
-    --color-border: var(--border);
-    --color-input: var(--input);
-    --color-ring: var(--ring);
-    --radius-sm: calc(var(--radius) - 4px);
-    --radius-md: calc(var(--radius) - 2px);
-    --radius-lg: var(--radius);
-    --radius-xl: calc(var(--radius) + 4px);
-    --radius-2xl: calc(var(--radius) + 8px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
 }
 
 :root {
-    --radius: 0.625rem;
-    --background: #F5EDE6;
-    --foreground: #070606;
-    --card: #FDFAF8;
-    --card-foreground: #1a1a1a;
-    --popover: #FDFAF8;
-    --popover-foreground: #1a1a1a;
-    --primary: #E8705A;
-    --primary-foreground: #ffffff;
-    --secondary: #EDE5DD;
-    --secondary-foreground: #1a1a1a;
-    --muted: #EDE5DD;
-    --muted-foreground: #666666;
-    --accent: #EDE5DD;
-    --accent-foreground: #1a1a1a;
-    --destructive: #ef4444;
-    --border: #D9CFC6;
-    --input: #D9CFC6;
-    --ring: #E8705A;
+  --radius: 0.625rem;
+  --background: #f5ede6;
+  --foreground: #070606;
+  --card: #fdfaf8;
+  --card-foreground: #1a1a1a;
+  --popover: #fdfaf8;
+  --popover-foreground: #1a1a1a;
+  --primary: #e8705a;
+  --primary-foreground: #ffffff;
+  --secondary: #ede5dd;
+  --secondary-foreground: #1a1a1a;
+  --muted: #ede5dd;
+  --muted-foreground: #666666;
+  --accent: #ede5dd;
+  --accent-foreground: #1a1a1a;
+  --destructive: #ef4444;
+  --border: #d9cfc6;
+  --input: #d9cfc6;
+  --ring: #e8705a;
 }
 
 .dark {
-    --background: #0F1A2E;
-    --foreground: #ffffff;
-    --card: #162240;
-    --card-foreground: #ffffff;
-    --popover: #162240;
-    --popover-foreground: #ffffff;
-    --primary: #E8705A;
-    --primary-foreground: #ffffff;
-    --secondary: #1E3055;
-    --secondary-foreground: #ffffff;
-    --muted: #1E3055;
-    --muted-foreground: #a3a3a3;
-    --accent: #1E3055;
-    --accent-foreground: #ffffff;
-    --destructive: #ef4444;
-    --border: #253A60;
-    --input: #253A60;
-    --ring: #E8705A;
+  --background: #0f1a2e;
+  --foreground: #ffffff;
+  --card: #162240;
+  --card-foreground: #ffffff;
+  --popover: #162240;
+  --popover-foreground: #ffffff;
+  --primary: #e8705a;
+  --primary-foreground: #ffffff;
+  --secondary: #1e3055;
+  --secondary-foreground: #ffffff;
+  --muted: #1e3055;
+  --muted-foreground: #a3a3a3;
+  --accent: #1e3055;
+  --accent-foreground: #ffffff;
+  --destructive: #ef4444;
+  --border: #253a60;
+  --input: #253a60;
+  --ring: #e8705a;
 }
 
 @layer base {
-    * {
-        @apply border-border outline-ring/50;
-    }
+  * {
+    @apply border-border outline-ring/50;
+  }
 
-    body {
-        @apply bg-background text-foreground;
-        margin: 0;
-        padding: 0;
-        min-height: 100vh;
-    }
+  body {
+    @apply bg-background text-foreground;
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+  }
 }

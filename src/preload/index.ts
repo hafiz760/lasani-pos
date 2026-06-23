@@ -131,10 +131,12 @@ const api = {
     printReceipt: (html: string) => ipcRenderer.invoke('printer:printReceipt', html)
   },
   dashboard: {
-    getStats: (storeId, period?: string) => ipcRenderer.invoke('dashboard:getStats', storeId, period)
+    getStats: (storeId, period?: string) =>
+      ipcRenderer.invoke('dashboard:getStats', storeId, period)
   },
   config: {
     get: () => ipcRenderer.invoke('config:get'),
+    seedStarterData: () => ipcRenderer.invoke('config:seedStarterData'),
     save: (data) => ipcRenderer.invoke('config:save', data),
     testConnection: (mongoUri: string) => ipcRenderer.invoke('config:testConnection', mongoUri),
     getConnectionStatus: () => ipcRenderer.invoke('config:getConnectionStatus')

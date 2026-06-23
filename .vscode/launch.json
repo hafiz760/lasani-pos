@@ -6,13 +6,10 @@
       "program": "${workspaceFolder}/main.js",
       "request": "launch",
       "runtimeExecutable": "electron",
-      "skipFiles": [
-        "<node_internals>/**"
-      ],
+      "skipFiles": ["<node_internals>/**"],
       "type": "node"
     },
-    
-    
+
     {
       "name": "Debug Main Process",
       "type": "node",

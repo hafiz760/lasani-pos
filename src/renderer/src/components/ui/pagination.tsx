@@ -1,26 +1,21 @@
-import {
-  ChevronLeft,
-  ChevronRight,
-  ChevronsLeft,
-  ChevronsRight,
-} from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Button } from "./button";
+  SelectValue
+} from '@/components/ui/select'
+import { Button } from './button'
 
 interface PaginationProps {
-  currentPage: number;
-  totalPages: number;
-  totalRecords: number;
-  pageSize: number;
-  onPageChange: (page: number) => void;
-  onPageSizeChange: (pageSize: number) => void;
-  pageSizeOptions?: number[];
+  currentPage: number
+  totalPages: number
+  totalRecords: number
+  pageSize: number
+  onPageChange: (page: number) => void
+  onPageSizeChange: (pageSize: number) => void
+  pageSizeOptions?: number[]
 }
 
 export function Pagination({
@@ -30,31 +25,27 @@ export function Pagination({
   pageSize,
   onPageChange,
   onPageSizeChange,
-  pageSizeOptions = [10, 20, 50, 100],
+  pageSizeOptions = [10, 20, 50, 100]
 }: PaginationProps) {
-  const startRecord = totalRecords === 0 ? 0 : (currentPage - 1) * pageSize + 1;
-  const endRecord = Math.min(currentPage * pageSize, totalRecords);
+  const startRecord = totalRecords === 0 ? 0 : (currentPage - 1) * pageSize + 1
+  const endRecord = Math.min(currentPage * pageSize, totalRecords)
 
-  const canGoPrevious = currentPage > 1;
-  const canGoNext = currentPage < totalPages;
+  const canGoPrevious = currentPage > 1
+  const canGoNext = currentPage < totalPages
 
   return (
     <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-2 py-4">
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
         <span>
-          Showing{" "}
-          <span className="font-medium text-foreground">{startRecord}</span> to{" "}
-          <span className="font-medium text-foreground">{endRecord}</span> of{" "}
-          <span className="font-medium text-foreground">{totalRecords}</span>{" "}
-          records
+          Showing <span className="font-medium text-foreground">{startRecord}</span> to{' '}
+          <span className="font-medium text-foreground">{endRecord}</span> of{' '}
+          <span className="font-medium text-foreground">{totalRecords}</span> records
         </span>
       </div>
 
       <div className="flex items-center gap-6">
         <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground whitespace-nowrap">
-            Rows per page
-          </span>
+          <span className="text-sm text-muted-foreground whitespace-nowrap">Rows per page</span>
           <Select
             value={pageSize.toString()}
             onValueChange={(value) => onPageSizeChange(Number(value))}
@@ -74,12 +65,8 @@ export function Pagination({
 
         <div className="flex items-center gap-2">
           <span className="text-sm text-muted-foreground">
-            Page{" "}
-            <span className="font-medium text-foreground">{currentPage}</span>{" "}
-            of{" "}
-            <span className="font-medium text-foreground">
-              {totalPages || 1}
-            </span>
+            Page <span className="font-medium text-foreground">{currentPage}</span> of{' '}
+            <span className="font-medium text-foreground">{totalPages || 1}</span>
           </span>
         </div>
 
@@ -127,5 +114,5 @@ export function Pagination({
         </div>
       </div>
     </div>
-  );
+  )
 }

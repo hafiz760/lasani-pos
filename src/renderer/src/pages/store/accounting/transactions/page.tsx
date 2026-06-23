@@ -1,16 +1,9 @@
 import { useEffect, useState } from 'react'
 import type { DateRange } from 'react-day-picker'
-import {
-  endOfDay,
-  endOfMonth,
-  format,
-  startOfDay,
-  startOfMonth
-} from 'date-fns'
+import { endOfDay, endOfMonth, format, startOfDay, startOfMonth } from 'date-fns'
 
 import { DataPage } from '@renderer/components/shared/data-page'
 import { Badge } from '@renderer/components/ui/badge'
-
 
 export default function TransactionsPage() {
   const [range, setRange] = useState<DateRange | undefined>()
@@ -108,8 +101,9 @@ export default function TransactionsPage() {
       accessor: 'totalAmount',
       render: (item: any) => (
         <span
-          className={`font-bold ${item.entries?.[0]?.entryType === 'DEBIT' ? 'text-emerald-500' : 'text-red-400'
-            }`}
+          className={`font-bold ${
+            item.entries?.[0]?.entryType === 'DEBIT' ? 'text-emerald-500' : 'text-red-400'
+          }`}
         >
           {item.entries?.[0]?.entryType === 'DEBIT' ? '' : '-'}Rs.{' '}
           {item.totalAmount?.toLocaleString()}

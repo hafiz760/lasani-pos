@@ -4,11 +4,7 @@ interface PrintOptions {
   styles?: string
 }
 
-export const printContent = async ({
-  title,
-  content,
-  styles = "",
-}: PrintOptions) => {
+export const printContent = async ({ title, content, styles = '' }: PrintOptions) => {
   const htmlContent = `
 <!DOCTYPE html>
 <html>
@@ -84,12 +80,12 @@ export const printContent = async ({
 
   try {
     if (!window.api?.printer) {
-      alert("Printer API not available")
+      alert('Printer API not available')
       return
     }
     await window.api.printer.printReceipt(htmlContent)
   } catch (err) {
-    console.error("Print failed:", err)
-    alert("Print failed")
+    console.error('Print failed:', err)
+    alert('Print failed')
   }
 }

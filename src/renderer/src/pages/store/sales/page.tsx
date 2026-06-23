@@ -171,16 +171,16 @@ export default function SalesPage() {
             </thead>
             <tbody>
               ${report.sales
-        .map(
-          (sale) => `
+                .map(
+                  (sale) => `
                     <tr style="border-bottom: 1px solid #e5e7eb;">
                       <td style="padding: 8px;">${sale.invoiceNumber}</td>
                       <td style="padding: 8px;">${format(new Date(sale.saleDate), 'MMM dd, yyyy')}</td>
                       <td style="padding: 8px; text-align: right;">${formatCurrency(sale.totalAmount)}</td>
                     </tr>
                   `
-        )
-        .join('')}
+                )
+                .join('')}
             </tbody>
           </table>
         </div>
@@ -254,12 +254,17 @@ export default function SalesPage() {
                 {report?.sales.length ? (
                   report.sales.map((sale) => (
                     <TableRow key={sale._id} className="hover:bg-muted/10 transition-colors">
-                      <TableCell className="font-bold text-xs uppercase text-muted-foreground">{sale.invoiceNumber}</TableCell>
+                      <TableCell className="font-bold text-xs uppercase text-muted-foreground">
+                        {sale.invoiceNumber}
+                      </TableCell>
                       <TableCell className="text-xs whitespace-nowrap">
                         {format(new Date(sale.saleDate), 'MMM dd, yyyy')}
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline" className={`${statusBadge(sale.paymentStatus)} text-[10px] uppercase font-black`}>
+                        <Badge
+                          variant="outline"
+                          className={`${statusBadge(sale.paymentStatus)} text-[10px] uppercase font-black`}
+                        >
                           {sale.paymentStatus}
                         </Badge>
                       </TableCell>
@@ -302,7 +307,9 @@ export default function SalesPage() {
                   report.grouped.map((group) => (
                     <TableRow key={group._id} className="hover:bg-muted/10 transition-colors">
                       <TableCell className="font-bold text-xs uppercase">{group._id}</TableCell>
-                      <TableCell className="text-right font-mono font-bold text-muted-foreground">{group.count}</TableCell>
+                      <TableCell className="text-right font-mono font-bold text-muted-foreground">
+                        {group.count}
+                      </TableCell>
                       <TableCell className="text-right font-mono font-bold">
                         {formatCurrency(group.totalAmount)}
                       </TableCell>

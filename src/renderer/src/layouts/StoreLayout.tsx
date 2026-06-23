@@ -134,8 +134,9 @@ export default function StoreLayout({ onLogout }: StoreLayoutProps) {
     <div className="flex min-h-screen bg-background text-foreground">
       {!isPosPage && (
         <aside
-          className={`fixed inset-y-0 left-0 z-50 bg-card border-r border-border transition-all duration-300 ease-in-out ${isSidebarOpen ? 'w-64' : 'w-20'
-            }`}
+          className={`fixed inset-y-0 left-0 z-50 bg-card border-r border-border transition-all duration-300 ease-in-out ${
+            isSidebarOpen ? 'w-64' : 'w-20'
+          }`}
         >
           <div className="flex h-16 items-center justify-between px-4 border-b border-border">
             {isSidebarOpen ? (
@@ -181,10 +182,11 @@ export default function StoreLayout({ onLogout }: StoreLayoutProps) {
                       <Link to={item.href}>
                         <Button
                           variant={isActive ? 'secondary' : 'ghost'}
-                          className={`w-full justify-start mb-1 ${isActive
-                            ? 'bg-[#E8705A]/10 text-[#E8705A] hover:bg-[#E8705A]/20 font-semibold'
-                            : 'text-muted-foreground hover:text-foreground hover:bg-muted'
-                            } ${!isSidebarOpen && 'px-2 justify-center'}`}
+                          className={`w-full justify-start mb-1 ${
+                            isActive
+                              ? 'bg-[#E8705A]/10 text-[#E8705A] hover:bg-[#E8705A]/20 font-semibold'
+                              : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                          } ${!isSidebarOpen && 'px-2 justify-center'}`}
                         >
                           <item.icon className={`h-5 w-5 ${isSidebarOpen && 'mr-3'}`} />
                           {isSidebarOpen && <span>{item.label}</span>}
@@ -194,8 +196,9 @@ export default function StoreLayout({ onLogout }: StoreLayoutProps) {
                       <>
                         <Button
                           variant="ghost"
-                          className={`w-full justify-between mb-1 ${isParentActive ? 'text-foreground' : 'text-muted-foreground'
-                            } ${!isSidebarOpen && 'px-2 justify-center'}`}
+                          className={`w-full justify-between mb-1 ${
+                            isParentActive ? 'text-foreground' : 'text-muted-foreground'
+                          } ${!isSidebarOpen && 'px-2 justify-center'}`}
                           onClick={() => toggleMenu(item.label)}
                         >
                           <div className="flex items-center">
@@ -204,8 +207,9 @@ export default function StoreLayout({ onLogout }: StoreLayoutProps) {
                           </div>
                           {isSidebarOpen && (
                             <ChevronRight
-                              className={`h-4 w-4 transition-transform ${isExpanded ? 'rotate-90' : ''
-                                }`}
+                              className={`h-4 w-4 transition-transform ${
+                                isExpanded ? 'rotate-90' : ''
+                              }`}
                             />
                           )}
                         </Button>
@@ -217,10 +221,11 @@ export default function StoreLayout({ onLogout }: StoreLayoutProps) {
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  className={`w-full justify-start h-9 ${location.pathname === subItem.href
-                                    ? 'text-[#E8705A] bg-[#E8705A]/5'
-                                    : 'text-muted-foreground hover:text-foreground'
-                                    }`}
+                                  className={`w-full justify-start h-9 ${
+                                    location.pathname === subItem.href
+                                      ? 'text-[#E8705A] bg-[#E8705A]/5'
+                                      : 'text-muted-foreground hover:text-foreground'
+                                  }`}
                                 >
                                   {subItem.label}
                                 </Button>
@@ -239,8 +244,9 @@ export default function StoreLayout({ onLogout }: StoreLayoutProps) {
           <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-border bg-card">
             <Button
               variant="ghost"
-              className={`w-full justify-start text-red-500 hover:text-red-500 hover:bg-red-500/10 ${!isSidebarOpen && 'px-2 justify-center'
-                }`}
+              className={`w-full justify-start text-red-500 hover:text-red-500 hover:bg-red-500/10 ${
+                !isSidebarOpen && 'px-2 justify-center'
+              }`}
               onClick={handleLogout}
             >
               <LogOut className={`h-5 w-5 ${isSidebarOpen && 'mr-3'}`} />
@@ -250,8 +256,9 @@ export default function StoreLayout({ onLogout }: StoreLayoutProps) {
         </aside>
       )}
       <main
-        className={`flex-1 transition-all duration-300 ease-in-out ${isPosPage ? 'ml-0' : isSidebarOpen ? 'ml-64' : 'ml-20'
-          }`}
+        className={`flex-1 transition-all duration-300 ease-in-out ${
+          isPosPage ? 'ml-0' : isSidebarOpen ? 'ml-64' : 'ml-20'
+        }`}
       >
         {!isPosPage && (
           <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-border bg-background/95 backdrop-blur px-6">

@@ -4,6 +4,7 @@ import * as path from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { connectToDatabase } from './lib/mongodb'
+import { seedInitialData } from './lib/seed'
 import { registerIpcHandlers } from './ipc/handlers'
 
 function createWindow(): void {
@@ -73,6 +74,10 @@ app.whenReady().then(() => {
   connectToDatabase().then((result) => {
     if (result.success) {
       console.log('✅ Database connected successfully')
+      seedInitialData().catch((error: unknown) => {
+        const message = error instanceof Error ? error.message : 'Unknown seed error'
+        console.error('Failed to verify starter data:', message)
+      })
     } else {
       console.error('⚠️ Database connection failed:', result.error)
       console.log('📝 User will be prompted to configure database connection')
